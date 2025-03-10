@@ -41,9 +41,9 @@ class lux_object:
     def get_instance(self, idx):
         self.inst = self.X_test[idx].reshape(1, -1)
 
-    def explain(self, data, target, target_map):
-        self.explainer.fit(data, target, instance_to_explain=self.inst, class_names=list(target_map.values()))
+    def explain(self, data, target, target_map, numeric_vars):
+        self.explainer.fit(data, target, instance_to_explain=self.inst, class_names=list(target_map.values()), categorical=[col not in numeric_vars for col in data.columns])
         return self.explainer.justify(self.inst)
 
     def print_expalanation(self, explanation):
-        print(f"LUX:\n{explanation}")
+        print(f"LUX: {explanation[0]}")

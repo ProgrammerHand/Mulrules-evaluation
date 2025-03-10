@@ -34,10 +34,10 @@ class anchor_object:
         self.X_test = X_test
         self.y_test = y_test
         self.feature_names = feature_names
-        self.category_map =  category_map
+        self.category_map = category_map
 
-    def init_explainer(self, predict_fn):
-        self.explainer = AnchorTabular(predict_fn, self.feature_names, categorical_names=self.category_map, seed=1)
+    def init_explainer(self, predict_fn, ohe=False):
+        self.explainer = AnchorTabular(predict_fn, self.feature_names, categorical_names=self.category_map, ohe=ohe, seed=1)
         self.explainer.fit(self.X_train)
 
     def get_instance(self, idx):
@@ -46,6 +46,6 @@ class anchor_object:
     def explain(self):
         return self.explainer.explain(self.inst)
 
-    def print_expalanation(self,explanation):
+    def print_expalanation(self, explanation):
         print('Anchor: IF %s' % (' AND '.join(
             explanation.anchor) + f' THEN {self.explainer.predictor(self.inst.reshape(1, -1))[0]}' + f" Pre {explanation.precision}" + f" Cov {explanation.coverage}"))

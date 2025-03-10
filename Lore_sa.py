@@ -36,16 +36,16 @@ from sklearn.metrics import accuracy_score
 #     print(f"Explanation:\n{exp.exp}")
 
 class lore_object:
-    def __init__(self, X_train, y_train, X_test, y_test, raw_ohe):
+    def __init__(self, X_train, y_train, X_test, y_test, raw_ohe, config = {"neigh_type": "geneticp", "size": 1000, "ocr": 0.1, "ngen": 10}):
         self.X_train = X_train
         self.y_train = y_train
         self.X_test = X_test
         self.y_test = y_test
         self.raw_ohe = raw_ohe
-        self.config = {"neigh_type": "geneticp", "size": 1000, "ocr": 0.1, "ngen": 10}
+        self.config = config
 
     def init_explainer(self, bbox):
-        self.explainer = LoreTabularExplainer(bbox)
+        self.explainer = LoreTabularExplainer(bbox, )
         self.explainer.fit(self.raw_ohe, self.raw_ohe.columns[-1], self.config)
         print(f"Initializing LORE Explainer with config: {self.config}")
 
@@ -55,8 +55,11 @@ class lore_object:
     def explain(self):
         return self.explainer.explain(self.inst)
 
-    def print_expalanation(self, explanation):
-        print(f"LORE:\n{explanation.exp.rule}")
+    def print_explanation(self, explanation):
+        print("LORE: IF", end=" ")
+        conditions = " AND ".join(str(part) for part in explanation.exp.rule.premises)
+        print(f"{conditions} THEN {explanation.exp.rule.cons}")
+
 
 
 

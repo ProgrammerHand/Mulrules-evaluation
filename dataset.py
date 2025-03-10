@@ -72,10 +72,11 @@ class dataset:
 
     def init_preprocessor(self):
         ordinal_features = [x for x in range(len(self.feature_names)) if x not in list(self.category_map.keys())]
-        ordinal_transformer = Pipeline(steps=[('imputer', SimpleImputer(strategy='median')),
-                                              ('scaler', StandardScaler())])
+        # ordinal_transformer = Pipeline(steps=[('imputer', SimpleImputer(strategy='median')),
+        #                                       ('scaler', StandardScaler())])
+        ordinal_transformer = Pipeline(steps=[('imputer', SimpleImputer(strategy='median'))])
         categorical_features = list(self.category_map.keys())
-        categorical_transformer = Pipeline(steps=[('imputer', SimpleImputer(strategy='median')),
+        categorical_transformer = Pipeline(steps=[('imputer', SimpleImputer(strategy='most_frequent')),
                                                   ('onehot', OneHotEncoder(handle_unknown='ignore'))])
 
         self.preprocessor = ColumnTransformer(transformers=[('num', ordinal_transformer, ordinal_features), ('cat', categorical_transformer, categorical_features)],
