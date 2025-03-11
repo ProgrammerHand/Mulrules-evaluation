@@ -1,4 +1,4 @@
-import dataset
+import dataset_manager
 from sklearn.ensemble import RandomForestClassifier
 import pandas as pd
 from lux.lux import LUX
@@ -34,9 +34,10 @@ class lux_object:
         self.y_test = y_test
         self.fraction = fraction
 
-    def init_explainter(self, predict_proba):
-        self.explainer = LUX(predict_proba=predict_proba, neighborhood_size=int(len(self.X_train) * self.fraction), max_depth=5,
-                  node_size_limit=2, grow_confidence_threshold=0)
+    def init_explainter(self, predict_proba, max_depth=5, node_size_limit=2, grow_confidence_threshold=0 ):
+        self.explainer = LUX(predict_proba=predict_proba, neighborhood_size=int(len(self.X_train) * self.fraction), max_depth=max_depth,
+                  node_size_limit=node_size_limit, grow_confidence_threshold=grow_confidence_threshold)
+        return f"Initializing LUX with params neighborhood_size = {int(len(self.X_train) * self.fraction)}, max_depth = {max_depth}, node_size_limit = {node_size_limit}, grow_confidence_threshold {grow_confidence_threshold}"
 
     def get_instance(self, idx):
         self.inst = self.X_test[idx].reshape(1, -1)
@@ -46,4 +47,5 @@ class lux_object:
         return self.explainer.justify(self.inst)
 
     def print_expalanation(self, explanation):
-        print(f"LUX: {explanation[0]}")
+        # print(f"LUX: {explanation[0]}")
+        return explanation[0]

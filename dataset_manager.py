@@ -10,9 +10,10 @@ from sklearn.preprocessing import StandardScaler, OneHotEncoder, LabelEncoder
 from collections import Counter
 from collections import defaultdict
 
-class dataset:
+class dataset_object:
     def __init__(self, dataset_name, directory: str = './data/'):
         self.raw = self.read_file(dataset_name, directory)
+        self.predef_preprocessing(dataset_name)
         self.raw_ohe = []
         self.data = self.raw.iloc[:,:-1]
         self.data_labeled = self.data.__deepcopy__()
@@ -28,7 +29,6 @@ class dataset:
         self.numerical_features = [name for name in self.feature_names if name not in self.categorical_features]
         self.features_map = []
 
-
     def read_file(self, dataset_name: str, directory: str = './data/') -> pd.DataFrame:
         _, _, stats_filenames = os.walk(directory).__next__()
         for stat_filename in stats_filenames:
@@ -39,6 +39,11 @@ class dataset:
                         print(f"Reading {stat_filename} from {directory}")
                         return pd.read_csv(file)
         print("File not found")
+
+    def predef_preprocessing(self, dataset_name):
+        if dataset_name == "titanic_nan_prepr":
+            self.raw.drop(['Name', 'Ticket', 'Cabin'], axis=1, inplace=True)
+
 
     def class_distribution(self, y):
         counts = Counter(y)
@@ -67,14 +72,13 @@ class dataset:
             else:
                 self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(self.data.to_numpy(), self.target,
                                                                                     test_size=test_size)
-        print("Training Set Balance:", self.class_distribution(self.y_train))
-        print("Test Set Balance:", self.class_distribution(self.y_test))
+        return f"Training Set Balance: {self.class_distribution(self.y_train)}" + "\n" + f"Test Set Balance: {self.class_distribution(self.y_test)}"
 
     def init_preprocessor(self):
         ordinal_features = [x for x in range(len(self.feature_names)) if x not in list(self.category_map.keys())]
         # ordinal_transformer = Pipeline(steps=[('imputer', SimpleImputer(strategy='median')),
         #                                       ('scaler', StandardScaler())])
-        ordinal_transformer = Pipeline(steps=[('imputer', SimpleImputer(strategy='median'))])
+        ordinal_transformer = Pipeline(steps=[('imputer', SimpleImputer(strategy='mean'))])
         categorical_features = list(self.category_map.keys())
         categorical_transformer = Pipeline(steps=[('imputer', SimpleImputer(strategy='most_frequent')),
                                                   ('onehot', OneHotEncoder(handle_unknown='ignore'))])
@@ -83,6 +87,24 @@ class dataset:
                                                   sparse_threshold=0)
 
         self.preprocessor.fit(self.X_train)
+
+    def init_nan_preprocessor(self):
+        ordinal_features = [x for x in range(len(self.feature_names)) if x not in list(self.category_map.keys())]
+        # ordinal_transformer = Pipeline(steps=[('imputer', SimpleImputer(strategy='median')),
+        #                                       ('scaler', StandardScaler())])
+        ordinal_transformer = Pipeline(steps=[('imputer', SimpleImputer(strategy='mean'))])
+        categorical_features = list(self.category_map.keys())
+        # categorical_transformer = Pipeline(steps=[('imputer', SimpleImputer(missing_values="?", strategy='most_frequent'))])
+        categorical_transformer = Pipeline(steps=[('imputer', SimpleImputer(fill_value="?", strategy='constant'))])
+
+        self.nan_preprocessor = ColumnTransformer(transformers=[('num', ordinal_transformer, ordinal_features), ('cat', categorical_transformer, categorical_features)],
+                                                  sparse_threshold=0).set_output(transform='pandas')
+
+        self.nan_preprocessor.fit(self.data)
+
+    def nan_preproces(self):
+        self.data = self.nan_preprocessor.transform(self.data)
+        self.data_labeled = self.nan_preprocessor.transform(self.data_labeled)
 
     def onehot_encode(self):
         if not self.multi_target:
