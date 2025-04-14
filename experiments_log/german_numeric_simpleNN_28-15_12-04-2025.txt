@@ -1,0 +1,60 @@
+INFO : Reading german.csv from ./data/
+INFO : Numeric: ['duration', 'credit_amount', 'installment_commitment', 'residence_since', 'age', 'existing_credits', 'num_dependents'] 
+ Categorical: None, Continuous: ['duration', 'credit_amount', 'age']
+INFO : Num_strat: mean, Cat_strat: constant, Cat_fill: ?
+INFO : Target_map: {'good': 0, 'bad': 1}
+INFO : Test_size: 0.3, Random_state: 42
+INFO : Classifier: simpleNN Parameters: {'input_size': 7}
+INFO : Train accuracy: 0.6728571428571428
+INFO : Test accuracy: 0.6766666666666666
+INFO : 
+Classification Report (Train):
+              precision    recall  f1-score   support
+
+        good       0.72      0.88      0.79       490
+         bad       0.41      0.19      0.26       210
+
+    accuracy                           0.67       700
+   macro avg       0.56      0.54      0.53       700
+weighted avg       0.62      0.67      0.63       700
+
+INFO : 
+Classification Report (Test):
+              precision    recall  f1-score   support
+
+        good       0.72      0.90      0.80       210
+         bad       0.46      0.19      0.27        90
+
+    accuracy                           0.69       300
+   macro avg       0.59      0.55      0.54       300
+weighted avg       0.64      0.69      0.64       300
+
+INFO : Initializing Anchor Explainer with params: precision_treshold = 0.9, beam_size = 2, feature_names = Index(['duration', 'credit_amount', 'installment_commitment',
+       'residence_since', 'age', 'existing_credits', 'num_dependents'],
+      dtype='object'), categorical_names = None, seed = None
+INFO : Initializing LORE_xailib Explainer with config: {'neigh_type': 'geneticp', 'size': 1000, 'ocr': 0.1, 'ngen': 10}
+INFO : Initializing LUX with params neighborhood_size = 35, max_depth = 10, min_samples = 5, node_size_limit = 1, grow_confidence_threshold = 0
+INFO ENTRY: Explaining instance: 404 outcome: good
+INFO RULE: Anchor: IF duration <= 24.00 THEN good Pre, Cov : (0.92, 0.7713)
+INFO RULE: Anchor: IF 3.00 < installment_commitment <= 4.00 AND credit_amount > 2319.50 AND duration > 12.00 AND existing_credits <= 2.00 AND num_dependents > 1.00 AND residence_since <= 4.00 THEN good Pre, Cov : (0.4151044456347081, 0.0218)
+INFO RULE: LORE_xailib: IF age > -1.30 AND credit_amount <= 3.93 AND credit_amount > -0.74 AND duration <= 0.11 AND duration > -0.27 AND existing_credits <= 1.97 AND existing_credits > 0.84 AND installment_commitment <= 4.21 AND installment_commitment > 3.98 AND num_dependents > 1.06 AND residence_since <= 4.00 AND residence_since > 1.39 THEN bad Pre, Cov : (0.3333333333333333, 0.003)
+INFO RULE: LORE_xailib: IF age > -0.10 AND credit_amount <= -0.10 AND credit_amount > -0.14 AND duration <= 0.38 AND duration > -0.53 AND existing_credits > 0.82 AND installment_commitment <= 4.69 AND installment_commitment > 3.98 AND num_dependents > 1.85 THEN bad Pre, Cov : (0.0, 0.001)
+INFO RULE: LORE_sa: IF duration <= 18.089791297912598 AND duration > 17.90520668029785 AND credit_amount <= 3403.5091552734375 AND installment_commitment > 3.976348638534546 AND existing_credits <= 1.0031399726867676 AND age <= 43.62504768371582 AND age > 42.76197624206543 AND residence_since > 3.9975554943084717 AND num_dependents > 1.994384527206421 THEN good Pre, Cov : (1.0, 0.001)
+INFO RULE: LORE_sa: IF duration <= 18.262850761413574 AND duration > 17.96955966949463 AND age <= 43.035770416259766 AND age > 42.664804458618164 AND credit_amount <= 2948.1492919921875 AND credit_amount > 2449.6956787109375 AND installment_commitment > 3.9545247554779053 AND num_dependents > 1.9940825700759888 AND residence_since > 3.9981417655944824 AND existing_credits <= 1.0140281915664673 THEN good Pre, Cov : (1.0, 0.001)
+INFO RULE: LUX: IF age >=27.5 AND credit_amount < -77.40302344770602 * duration+6832.212617787708 THEN class = good  # confidence = 1.0
+INFO ENTRY: Explaining instance: 11 outcome: bad
+INFO RULE: Anchor: IF installment_commitment <= 3.00 AND residence_since <= 4.00 THEN bad Pre, Cov : (0.90625, 0.5469)
+INFO RULE: Anchor: IF installment_commitment <= 3.00 THEN bad Pre, Cov : (0.932806324110672, 0.5328)
+INFO RULE: LORE_xailib: IF age <= -0.77 AND age > -1.73 AND credit_amount <= 0.43 AND credit_amount > 0.05 AND duration > 1.39 AND existing_credits <= 2.07 AND existing_credits > 0.78 AND installment_commitment <= 3.24 AND installment_commitment > 2.92 AND num_dependents <= 1.00 AND num_dependents > 0.85 THEN good Pre, Cov : (0.0, 0.001)
+INFO RULE: LORE_xailib: IF age <= -0.96 AND age > -1.17 AND credit_amount <= 0.63 AND credit_amount > 0.36 AND duration > 1.83 AND existing_credits <= 1.86 AND installment_commitment <= 3.81 AND installment_commitment > 2.41 AND num_dependents <= 1.03 AND num_dependents > 0.97 AND residence_since > 3.09 THEN bad Pre, Cov : (1.0, 0.001)
+INFO RULE: LORE_sa: IF duration <= 48.11720657348633 AND duration > 47.966386795043945 AND age <= 24.037333488464355 AND age > 23.567763328552246 AND credit_amount <= 4726.133056640625 AND credit_amount > 4029.751708984375 AND residence_since > 3.987660050392151 AND num_dependents <= 1.0012906789779663 AND existing_credits <= 1.0136515498161316 AND installment_commitment <= 3.000505805015564 AND installment_commitment > 2.992846131324768 THEN bad Pre, Cov : (1.0, 0.001)
+INFO RULE: LORE_sa: IF duration <= 52.87479782104492 AND duration > 47.846038818359375 AND age <= 25.024779319763184 AND age > 23.927560806274414 AND credit_amount <= 4549.14501953125 AND credit_amount > 3589.773681640625 AND residence_since > 3.987158179283142 AND installment_commitment <= 3.004338026046753 AND installment_commitment > 2.9995802640914917 AND existing_credits <= 1.0032401084899902 AND num_dependents <= 1.0029630661010742 THEN bad Pre, Cov : (1.0, 0.001)
+INFO RULE: LUX: IF age <26.5 AND credit_amount <4416.5 AND duration >=33.0 THEN class = bad  # confidence = 0.6
+INFO ENTRY: Explaining instance: 168 outcome: good
+INFO RULE: Anchor: IF duration <= 24.00 THEN bad Pre, Cov : (0.9550561797752809, 0.7758)
+INFO RULE: Anchor: IF age <= 27.00 AND credit_amount > 2319.50 AND duration > 18.00 AND existing_credits <= 2.00 AND residence_since > 3.00 THEN good Pre, Cov : (0.3436293436293436, 0.0403)
+INFO RULE: LORE_xailib: IF age <= -0.96 AND credit_amount > 0.09 AND duration <= 0.28 AND duration > 0.15 AND installment_commitment <= 2.80 AND num_dependents <= 2.07 AND num_dependents > 0.95 AND residence_since > 2.84 THEN bad Pre, Cov : (0.3333333333333333, 0.006)
+INFO RULE: LORE_xailib: IF age <= -0.86 AND age > -1.00 AND credit_amount <= 0.29 AND credit_amount > 0.26 AND duration <= 0.43 AND duration > 0.14 AND existing_credits <= 1.03 AND installment_commitment <= 2.05 AND installment_commitment > 2.00 AND num_dependents <= 1.01 AND num_dependents > 0.81 AND residence_since <= 4.24 AND residence_since > 3.17 THEN bad Pre, Cov : (0.0, 0.001)
+INFO RULE: LORE_sa: IF duration <= 25.158997535705566 AND duration > 23.752028465270996 AND existing_credits <= 1.0067631602287292 AND num_dependents <= 1.0002139806747437 AND installment_commitment <= 2.000505805015564 AND installment_commitment > 1.9923912286758423 AND age <= 25.021857261657715 AND residence_since > 3.984645128250122 AND credit_amount <= 4866.958251953125 AND credit_amount > 3410.2523193359375 THEN good Pre, Cov : (0.5, 0.002)
+INFO RULE: LORE_sa: IF duration <= 27.173527717590332 AND duration > 23.927295684814453 AND installment_commitment <= 2.0007015466690063 AND installment_commitment > 1.9816017746925354 AND num_dependents <= 1.0011122822761536 AND credit_amount <= 6534.9208984375 AND credit_amount > 3176.791259765625 AND existing_credits <= 1.0044015645980835 AND age <= 25.902559280395508 AND age > 24.99740219116211 AND residence_since > 3.997976064682007 THEN good Pre, Cov : (0.5, 0.002)
+INFO RULE: LUX: IF age <34.0 AND credit_amount >=3554.0 AND duration <27.0 AND installment_commitment <3.5 THEN class = good  # confidence = 1.0
