@@ -1,4 +1,6 @@
-import dataset_manager
+import numpy as np
+
+import dataset_manager_legacy
 from sklearn.ensemble import AdaBoostClassifier, RandomForestClassifier
 from alibi.explainers import AnchorTabular
 from sklearn.metrics import accuracy_score
@@ -36,28 +38,36 @@ class anchor_object:
         self.feature_names = feature_names
         self.category_map = category_map
         self.target_names = target_names
+        self.treshold = None
+        self.beam_size = None
 
-    def init_explainer(self, predict_fn, ohe=False, seed=1):
+    def init_explainer(self, predict_fn, treshold = 0.9, beam_size = 2, ohe=False, seed=None):
         self.explainer = AnchorTabular(predict_fn, self.feature_names, categorical_names=self.category_map, ohe=ohe, seed=seed) # seed to control random
         self.explainer.fit(self.X_train)
-        return f"Initializing Anchor Explainer with params: feature_names = {self.feature_names}, categorical_names {self.category_map}, seed = {seed}"
+        self.treshold = treshold
+        self.beam_size = beam_size
+        return f"Initializing Anchor Explainer with params: precision_treshold = {treshold}, beam_size = {beam_size}, feature_names = {self.feature_names}, categorical_names = {self.category_map}, seed = {seed}"
 
     def get_instance(self, idx):
         self.inst = self.X_test[idx]
 
-    def explain(self, amount, threshold=0.95, beam_size=1, verbose=False):
+    def explain(self, amount, threshold=0.9, beam_size=1, verbose=False):
         explanations = []
         while len(explanations) < amount:
             explanation = self.explainer.explain(self.inst, threshold=threshold, beam_size = beam_size, verbose=verbose)
+            explanation.anchor = sorted(explanation.anchor)
             if explanation.anchor not in [entry.anchor for entry in explanations]:
                 explanations.append(explanation)
         return explanations
         # return self.explainer.explain(self.inst)
 
-    def print_expalanation(self, explanation):
+    def print_explanation(self, explanation):
         anchor_conditions = ' AND '.join(explanation.anchor)
-        predicted_class = self.target_names[self.explainer.predictor(self.inst.reshape(1, -1))[0]]
-        result_string = f"Anchor: IF {anchor_conditions} THEN {predicted_class} Pre, Cov : ({explanation.precision}, {explanation.coverage})"
+        # predicted_class = self.target_names[self.explainer.predictor(self.inst.reshape(1, -1))[0]]
+        predicted_class = self.explainer.predictor(self.inst.reshape(1, -1))[0]
+        if type(predicted_class) == np.ndarray:
+            predicted_class = int(predicted_class[0])
+        result_string = f"Anchor: IF {anchor_conditions} THEN {self.target_names[predicted_class]} Pre, Cov : ({explanation.precision}, {explanation.coverage})"
         return result_string
         # print('Anchor: IF %s' % (' AND '.join(
         #     explanation.anchor) + f' THEN {self.target_names[self.explainer.predictor(self.inst.reshape(1, -1))[0]]}' + f" Pre {explanation.precision}" + f" Cov {explanation.coverage}"))

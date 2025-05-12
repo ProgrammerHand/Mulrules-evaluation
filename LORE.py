@@ -1,5 +1,6 @@
-import dataset_manager
+import dataset_manager_legacy
 import pandas as pd
+import numpy as np
 from lore_explainer.datamanager import prepare_dataset
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
@@ -35,7 +36,7 @@ from sklearn.metrics import accuracy_score
 #     exp = explainer.explain(inst)
 #     print(f"Explanation:\n{exp.exp}")
 
-class lore_object:
+class lore_object_old:
     def __init__(self, X_train, y_train, X_test, y_test, raw, config = {"neigh_type": "geneticp", "size": 1000, "ocr": 0.1, "ngen": 10}):
         self.X_train = X_train
         self.y_train = y_train
@@ -44,19 +45,23 @@ class lore_object:
         self.raw = raw
         self.config = config
 
-    def init_explainer(self, bbox):
+    def init_explainer(self, bbox, numeric_columns_input = None):
         self.explainer = LoreTabularExplainer(bbox)
-        self.explainer.fit(self.raw, self.raw.columns[-1], self.config)
-        return f"Initializing LORE Explainer with config: {self.config}"
+        self.explainer.fit(self.raw, self.raw.columns[-1], self.config, numeric_columns_input)
+        return f"Initializing LORE_xailib Explainer with config: {self.config}"
 
     def get_instance(self, idx):
-        self.inst = self.X_test[idx]
+        if type(self.X_test) == np.ndarray:
+            self.inst = self.X_test[idx]
+        else:
+            self.inst = self.X_test.to_numpy()[idx]
 
     def explain(self, amount):
         explanations = []
-        while len(explanations) < amount:
+        while len(explanations) < amount: # TODO speed up rule comparsion
             explanation = self.explainer.explain(self.inst)
-            if explanation.exp.rule not in [entry.exp.rule for entry in explanations]:
+            explanation.exp.rule.premises = sorted(explanation.exp.rule.premises, key=lambda x: x.att)
+            if explanation.exp.rule.premises not in [entry.exp.rule.premises for entry in explanations]:
                 explanations.append(explanation)
         return explanations
         # return self.explainer.explain(self.inst)
@@ -66,10 +71,10 @@ class lore_object:
         # conditions = " AND ".join(str(part) for part in explanation.exp.rule.premises)
         # print(f"{conditions} THEN {explanation.exp.rule.cons} Cov, Pre : {self.calculate_coverage_precision(explanation)}")
         conditions = " AND ".join(str(part) for part in explanation.exp.rule.premises)
-        result_string = f"LORE: IF {conditions} THEN {explanation.exp.rule.cons} Pre, Cov  : {self.calculate_coverage_precision(explanation)}"
+        result_string = f"LORE_xailib: IF {conditions} THEN {explanation.exp.rule.cons} Pre, Cov : {self.calculate_precision_coverage(explanation)}"
         return result_string
 
-    def apply_condition(self, condition):
+    def apply_condition(self, condition):# TODO check ops
         if condition.is_continuous:
             if condition.op == '<=':
                 return self.raw[condition.att] <= condition.thr
@@ -86,7 +91,7 @@ class lore_object:
             elif condition.op == '<=':
                 return self.raw[temp[0]] != temp[1]
 
-    def calculate_coverage_precision(self, explanation):
+    def calculate_precision_coverage(self, explanation):
 
         condition_mask = pd.Series([True] * len(self.raw))  # Start with all True (all rows selected)
 
