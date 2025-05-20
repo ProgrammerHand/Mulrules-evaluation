@@ -41,13 +41,15 @@ class sklearn_classifier_wrapper_custom(AbstractBBox):
         data = self.transformer.transform(data) if hasattr(self, 'transformer') else data
         return self.bbox.predict_proba(data)
 
-def create_classifier(classifier_name, classifiers_names, classifier_parametrs):
+def create_classifier(experiment_name, classifier_name, classifiers_names, classifier_parametrs):
     if classifier_name in classifiers_names and classifier_name in classifier_parametrs:
         # Instantiate the classifier using the lambda function
         classifier = classifiers_names[classifier_name]()
         if classifier_name == "simpleNN":
+            # return classifier(**classifier_parametrs[classifier_name][experiment_name])
             return classifier(**classifier_parametrs[classifier_name])
         # Set parameters using the classifier's parameters from classifier_parametrs
+        # classifier.set_params(**classifier_parametrs[classifier_name][experiment_name])
         classifier.set_params(**classifier_parametrs[classifier_name])
         return classifier
     else:
@@ -62,11 +64,11 @@ def get_predict_functions(dataset, clf, custom_scaler):
         if dataset.categorical_cols:
             predict_fn = lambda x: clf.predict(dataset.onehot_encoder.transform(custom_scaler.transform(x)))
             predict_probab_fn = lambda x: clf.predict_proba(dataset.onehot_encoder.transform(
-                    custom_scaler.transform(dataset.label_decode_features(x, dataset.categorical_cols))
+                    custom_scaler.transform(dataset.label_decode_features(x, dataset.categorical_cols, dataset.categorical_col_names))
                 )
             )
             predict_fn_anchor = lambda x: clf.predict(dataset.onehot_encoder.transform(
-                    custom_scaler.transform(dataset.label_decode_features(x, dataset.categorical_cols))
+                    custom_scaler.transform(dataset.label_decode_features(x, dataset.categorical_cols, dataset.categorical_col_names))
                 )
             )
         else:
@@ -88,3 +90,41 @@ def get_predict_functions(dataset, clf, custom_scaler):
             predict_fn_anchor = lambda x: clf.predict(x)
 
     return predict_fn, predict_probab_fn, predict_fn_anchor
+
+def get_balanced_correct_indexes(pred_funct, X_test, y_test, n):
+    # predictions
+    y_pred = pred_funct(X_test)
+
+    tempX = X_test.reset_index(drop=True)
+    temp = y_test.reset_index(drop=True)
+    # correct predictions
+    correct_mask = y_pred == y_test
+    correct_indices = np.where(correct_mask)[0]
+
+    classes = np.unique(y_test)
+    # X_correct = X_test[correct_mask]
+    # y_correct = y_test[correct_mask]
+
+    # how many samples per class
+    classes = np.unique(y_test)
+    n_per_class = n // len(classes)
+
+    selected_indices = []
+
+    for cls in classes:
+        # indices where the true class is cls and prediction is correct
+        # cls_indices = np.where((y_correct == cls))[0]
+        cls_correct_indices = np.where((y_test == cls) & correct_mask)[0]
+
+        if len(cls_correct_indices) < n_per_class:
+            print(f"Not enough correct samples for class {cls}. Requested {n_per_class}, but only {len(cls_correct_indices)} available.")
+            # sampled = np.random.choice(cls_indices, size=len(cls_indices), replace=False)
+            sampled = np.random.choice(cls_correct_indices, size=len(cls_correct_indices), replace=False)
+        else:
+            sampled = np.random.choice(cls_correct_indices, size=n_per_class, replace=False)
+            # sampled = np.random.choice(cls_indices, size=n_per_class, replace=False)
+
+        # Map back to original X_test index
+        selected_indices.extend(sampled.tolist())
+
+    return selected_indices

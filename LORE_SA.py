@@ -21,9 +21,10 @@ from lore_sa.neighgen import GeneticGenerator
 from lore_sa.encoder_decoder import ColumnTransformerEnc
 from lore_sa.lore import Lore
 from lore_sa.surrogate import DecisionTreeSurrogate
+from Rule_wrapper import rule_wrapper
 from sklearn.pipeline import make_pipeline
 
-class lore_object:
+class lore_sa_object:
 
     def __init__(self, name, numeric_col_names, categorical_col_names, X_test, y_test, raw , target_name = 'class'):
         self.dataset = TabularDataset.from_csv(('data/' + name), numeric_col_names, categorical_col_names, class_name=target_name[0], dropna = False)
@@ -58,8 +59,18 @@ class lore_object:
         explanations = []
         while len(explanations) < amount:
             explanation = self.tabularLoreExplainer.explain(self.inst)
-            if self.normalize_rule(explanation["rule"]) not in [self.normalize_rule(entry["rule"]) for entry in explanations]:# TODO convert to tuple
-                explanations.append(explanation)
+            if len(explanations) > 0:
+                flag = False
+                for rule in explanations:
+                    if rule.matches_raw_rule(explanation["rule"]["premises"], explanation["rule"]["consequence"]):
+                        flag = True
+                        break
+                if not flag:
+                    explanations.append(rule_wrapper.from_rule(explanation["rule"]["premises"], explanation["rule"]["consequence"], "LORE_SA"))
+            else:
+                explanations.append(rule_wrapper.from_rule(explanation["rule"]["premises"], explanation["rule"]["consequence"], "LORE_SA"))
+            # if self.normalize_rule(explanation["rule"]) not in [self.normalize_rule(entry["rule"]) for entry in explanations]:#
+            #     explanations.append(explanation)
         return explanations
         # return self.explainer.explain(self.inst)
 
@@ -85,12 +96,12 @@ class lore_object:
 
     def calculate_precision_coverage(self, explanation):
 
-        condition_mask = pd.Series([True] * len(self.raw))  # Start with all True (all rows selected)
+        condition_mask = pd.Series([True] * len(self.raw))  # start with all True (all rows selected)
 
         for condition in explanation["rule"]["premises"]:
             condition_mask &= self.apply_condition(condition)
 
-        # Filter rows that satisfy the rule
+        # filter rows that satisfy the rule
         filtered_data = self.raw[condition_mask]
 
         # Coverage: Proportion of rows that satisfy the rule

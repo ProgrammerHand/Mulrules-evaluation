@@ -1,8 +1,9 @@
 import numpy as np
 
+from Rule_wrapper import rule_wrapper
+from alibi.explainers import AnchorTabular
 import dataset_manager_legacy
 from sklearn.ensemble import AdaBoostClassifier, RandomForestClassifier
-from alibi.explainers import AnchorTabular
 from sklearn.metrics import accuracy_score
 
 # dataset = dataset.dataset("adult")
@@ -54,10 +55,23 @@ class anchor_object:
     def explain(self, amount, threshold=0.9, beam_size=1, verbose=False):
         explanations = []
         while len(explanations) < amount:
+
             explanation = self.explainer.explain(self.inst, threshold=threshold, beam_size = beam_size, verbose=verbose)
-            explanation.anchor = sorted(explanation.anchor)
-            if explanation.anchor not in [entry.anchor for entry in explanations]:
-                explanations.append(explanation)
+            predicted_class = self.target_names[self.explainer.predictor(self.inst.reshape(1, -1))[0]]
+            # explanation.anchor = sorted(explanation.anchor)
+            if len(explanations) > 0:
+                flag = False
+                for rule in explanations:
+                    if rule.matches_raw_rule(explanation.anchor, f"class = {predicted_class}", "ANCHOR"):
+                        flag = True
+                        break
+                if not flag:
+                    explanations.append(
+                            rule_wrapper.from_rule(explanation.anchor, f"class = {predicted_class}", "ANCHOR"))
+            else:
+                explanations.append(rule_wrapper.from_rule(explanation.anchor, f"class = {predicted_class}", "ANCHOR"))
+            # if explanation.anchor not in [entry.anchor for entry in explanations]:
+            #     explanations.append(explanation)
         return explanations
         # return self.explainer.explain(self.inst)
 

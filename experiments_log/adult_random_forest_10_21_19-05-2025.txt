@@ -1,0 +1,188 @@
+INFO : Reading adult.csv from ./data/
+INFO : Dropped columns:['fnlwgt']
+INFO : 
+Raw NaN counts per column:
+workclass         1836
+occupation        1843
+native.country     583
+dtype: int64
+INFO : Numeric: ['age', 'capital.gain', 'capital.loss', 'hours.per.week'] 
+ Categorical: ['workclass', 'education', 'education.num', 'marital.status', 'occupation', 'relationship', 'race', 'sex', 'native.country'], Continuous: ['age', 'capital.gain', 'capital.loss', 'hours.per.week']
+INFO : Num_strat: mean, Cat_strat: most_frequent
+INFO : 
+Raw NaN counts per column:
+Series([], dtype: int64)
+INFO : Target_map: {'<=50K': 0, '>50K': 1}
+INFO : Test_size: 0.3, Random_state: 42
+INFO : Classifier: random_forest Parameters: {'max_depth': 20, 'n_estimators': 50, 'random_state': 42}
+INFO : 
+Test class distribution:
+       Count  Percentage
+class                   
+0      24720       75.92
+1       7841       24.08
+INFO : 
+Train class distribution:
+       Count  Percentage
+class                   
+<=50K  17303       75.92
+>50K    5489       24.08
+INFO : 
+Test class distribution:
+       Count  Percentage
+class                   
+<=50K   7417       75.92
+>50K    2352       24.08
+INFO : Train accuracy: 0.9126009126009126
+INFO : Test accuracy: 0.8572013512130208
+INFO : 
+Classification Report (Train):
+              precision    recall  f1-score   support
+
+       <=50K       0.92      0.97      0.94     17303
+        >50K       0.90      0.72      0.80      5489
+
+    accuracy                           0.91     22792
+   macro avg       0.91      0.85      0.87     22792
+weighted avg       0.91      0.91      0.91     22792
+
+INFO : 
+Classification Report (Test):
+              precision    recall  f1-score   support
+
+       <=50K       0.88      0.94      0.91      7417
+        >50K       0.77      0.58      0.66      2352
+
+    accuracy                           0.86      9769
+   macro avg       0.82      0.76      0.79      9769
+weighted avg       0.85      0.86      0.85      9769
+
+INFO : Initializing Anchor Explainer with params: precision_treshold = 0.9, beam_size = 2, feature_names = Index(['age', 'workclass', 'education', 'education.num', 'marital.status',
+       'occupation', 'relationship', 'race', 'sex', 'capital.gain',
+       'capital.loss', 'hours.per.week', 'native.country'],
+      dtype='object'), categorical_names = {1: ['Federal-gov', 'Local-gov', 'Never-worked', 'Private', 'Self-emp-inc', 'Self-emp-not-inc', 'State-gov', 'Without-pay'], 2: ['10th', '11th', '12th', '1st-4th', '5th-6th', '7th-8th', '9th', 'Assoc-acdm', 'Assoc-voc', 'Bachelors', 'Doctorate', 'HS-grad', 'Masters', 'Preschool', 'Prof-school', 'Some-college'], 3: ['1', '10', '11', '12', '13', '14', '15', '16', '2', '3', '4', '5', '6', '7', '8', '9'], 4: ['Divorced', 'Married-AF-spouse', 'Married-civ-spouse', 'Married-spouse-absent', 'Never-married', 'Separated', 'Widowed'], 5: ['Adm-clerical', 'Armed-Forces', 'Craft-repair', 'Exec-managerial', 'Farming-fishing', 'Handlers-cleaners', 'Machine-op-inspct', 'Other-service', 'Priv-house-serv', 'Prof-specialty', 'Protective-serv', 'Sales', 'Tech-support', 'Transport-moving'], 6: ['Husband', 'Not-in-family', 'Other-relative', 'Own-child', 'Unmarried', 'Wife'], 7: ['Amer-Indian-Eskimo', 'Asian-Pac-Islander', 'Black', 'Other', 'White'], 8: ['Female', 'Male'], 12: ['Cambodia', 'Canada', 'China', 'Columbia', 'Cuba', 'Dominican-Republic', 'Ecuador', 'El-Salvador', 'England', 'France', 'Germany', 'Greece', 'Guatemala', 'Haiti', 'Holand-Netherlands', 'Honduras', 'Hong', 'Hungary', 'India', 'Iran', 'Ireland', 'Italy', 'Jamaica', 'Japan', 'Laos', 'Mexico', 'Nicaragua', 'Outlying-US(Guam-USVI-etc)', 'Peru', 'Philippines', 'Poland', 'Portugal', 'Puerto-Rico', 'Scotland', 'South', 'Taiwan', 'Thailand', 'Trinadad&Tobago', 'United-States', 'Vietnam', 'Yugoslavia']}, seed = None
+INFO : Initializing EXPLAN Explainer with config: N_samples=3000 tau=250
+INFO ENTRY: Explaining instance:
+ age                           35.0
+workclass         Self-emp-not-inc
+education                     11th
+education.num                    7
+marital.status            Divorced
+occupation         Exec-managerial
+relationship             Unmarried
+race                         White
+sex                         Female
+capital.gain                   0.0
+capital.loss                   0.0
+hours.per.week                84.0
+native.country       United-States
+Name: 19411, dtype: object original_outcome: <=50K, predicted_outcome <=50K
+INFO RULE: ANCHOR: IF age <= 37.0 AND capital.gain <= 0.0 THEN class = <=50K Cov,Cov_class,Cov_temp 0.47733; 0.55831; 0.62869, Pre, Len 0.88805,2
+INFO RULE: ANCHOR: IF capital.gain <= 0.0 AND marital.status = Divorced THEN class = <=50K Cov,Cov_class,Cov_temp 0.12417; 0.14925; 0.16354, Pre, Len 0.91261,2
+INFO RULE: ANCHOR: IF age <= 37.0 AND capital.gain <= 0.0 AND capital.loss <= 0.0 THEN class = <=50K Cov,Cov_class,Cov_temp 0.46064; 0.54335; 0.60671, Pre, Len 0.89556,3
+INFO RULE: ANCHOR: IF age <= 47.0 AND capital.gain <= 0.0 AND capital.loss <= 0.0 THEN class = <=50K Cov,Cov_class,Cov_temp 0.6622; 0.72806; 0.87219, Pre, Len 0.83475,3
+INFO RULE: LORE: IF capital.gain <= 594.0 AND sex = Female THEN class = <=50K Cov,Cov_class,Cov_temp 0.31006; 0.37293; 0.40839, Pre, Len 0.91317,2
+INFO RULE: LORE: IF capital.gain <= 0.0 THEN class = <=50K Cov,Cov_class,Cov_temp 0.91842; 0.9582; 1.20965, Pre, Len 0.79213,1
+INFO RULE: LORE: IF capital.gain <= 4064.0 AND sex = Female THEN class = <=50K Cov,Cov_class,Cov_temp 0.31784; 0.3825; 0.41863, Pre, Len 0.91369,2
+INFO RULE: LORE: IF capital.gain <= 4885.808886 THEN class = <=50K Cov,Cov_class,Cov_temp 0.95035; 0.99339; 1.25172, Pre, Len 0.79362,1
+INFO RULE: LORE_SA: IF capital.gain <= 5975.1396484375 AND sex = Female THEN class = <=50K Cov,Cov_class,Cov_temp 0.32102; 0.38533; 0.42281, Pre, Len 0.91135,2
+INFO RULE: LORE_SA: IF age <= 35.82083320617676 AND capital.gain <= 12236.846435546875 AND education != Bachelors THEN class = <=50K Cov,Cov_class,Cov_temp 0.38141; 0.46205; 0.50236, Pre, Len 0.91975,3
+INFO RULE: LORE_SA: IF capital.gain <= 9155.204833984375 AND workclass = Self-emp-not-inc THEN class = <=50K Cov,Cov_class,Cov_temp 0.07493; 0.0724; 0.09869, Pre, Len 0.73361,2
+INFO RULE: LORE_SA: IF capital.gain <= 3811.93212890625 AND capital.loss <= 200.89793395996094 THEN class = <=50K Cov,Cov_class,Cov_temp 0.8961; 0.95524; 1.18026, Pre, Len 0.80934,2
+INFO RULE: EXPLAN: IF capital.gain <= 0.0 AND hours.per.week > 50.0 THEN class = <=50K Cov,Cov_class,Cov_temp 0.10062; 0.08467; 0.13253, Pre, Len 0.63886,2
+INFO RULE: EXPLAN: IF age <= 41.015305 AND capital.gain <= 0.0 AND hours.per.week > 44.805184 THEN class = <=50K Cov,Cov_class,Cov_temp 0.14065; 0.13375; 0.18525, Pre, Len 0.72198,3
+INFO RULE: EXPLAN: IF capital.gain <= 582.143097 AND hours.per.week > 40.0 AND marital.status = Divorced THEN class = <=50K Cov,Cov_class,Cov_temp 0.0347; 0.03613; 0.04571, Pre, Len 0.79056,3
+INFO RULE: EXPLAN: IF capital.gain <= 4992.361511 AND marital.status = Divorced THEN class = <=50K Cov,Cov_class,Cov_temp 0.12898; 0.15518; 0.16988, Pre, Len 0.91349,2
+INFO ENTRY: Explaining instance:
+ age                        58.0
+workclass               Private
+education               HS-grad
+education.num                 9
+marital.status          Widowed
+occupation                Sales
+relationship      Not-in-family
+race                      White
+sex                        Male
+capital.gain                0.0
+capital.loss                0.0
+hours.per.week             38.0
+native.country    United-States
+Name: 28260, dtype: object original_outcome: <=50K, predicted_outcome <=50K
+INFO RULE: ANCHOR: IF capital.gain <= 0.0 AND capital.loss <= 0.0 AND hours.per.week <= 40.0 AND native.country = United-States THEN class = <=50K Cov,Cov_class,Cov_temp 0.56956; 0.64366; 0.75017, Pre, Len 0.85802,4
+INFO RULE: ANCHOR: IF capital.loss <= 0.0 AND education = HS-grad THEN class = <=50K Cov,Cov_class,Cov_temp 0.31365; 0.35095; 0.41311, Pre, Len 0.84954,2
+INFO RULE: ANCHOR: IF capital.gain <= 0.0 AND capital.loss <= 0.0 AND hours.per.week <= 40.0 THEN class = <=50K Cov,Cov_class,Cov_temp 0.62883; 0.71282; 0.82823, Pre, Len 0.86065,3
+INFO RULE: ANCHOR: IF capital.gain <= 0.0 AND education.num = 9.0 THEN class = <=50K Cov,Cov_class,Cov_temp 0.30658; 0.3465; 0.4038, Pre, Len 0.8581,2
+INFO RULE: LORE: IF capital.gain <= 3791.128472 THEN class = <=50K Cov,Cov_class,Cov_temp 0.94186; 0.98463; 1.24053, Pre, Len 0.79372,1
+INFO RULE: LORE: IF capital.gain <= 1600.445513 THEN class = <=50K Cov,Cov_class,Cov_temp 0.9221; 0.96306; 1.21451, Pre, Len 0.79296,1
+INFO RULE: LORE: IF capital.gain <= 0.0 THEN class = <=50K Cov,Cov_class,Cov_temp 0.91842; 0.9582; 1.20965, Pre, Len 0.79213,1
+INFO RULE: LORE: IF capital.gain <= 6849.0 AND workclass = Private THEN class = <=50K Cov,Cov_class,Cov_temp 0.73109; 0.78967; 0.96292, Pre, Len 0.82008,2
+INFO RULE: LORE_SA: IF capital.gain <= 9955.46484375 AND capital.loss <= 2497.816162109375 AND hours.per.week <= 68.97641372680664 THEN class = <=50K Cov,Cov_class,Cov_temp 0.95301; 0.97762; 1.25522, Pre, Len 0.77884,3
+INFO RULE: LORE_SA: IF capital.gain <= 7207.525146484375 AND education.num != 6 THEN class = <=50K Cov,Cov_class,Cov_temp 0.93008; 0.96441; 1.22502, Pre, Len 0.78726,2
+INFO RULE: LORE_SA: IF capital.gain <= 6924.942138671875 AND hours.per.week <= 41.503997802734375 AND native.country != Thailand AND native.country != Laos THEN class = <=50K Cov,Cov_class,Cov_temp 0.68328; 0.76352; 0.89996, Pre, Len 0.84839,4
+INFO RULE: LORE_SA: IF capital.gain <= 6077.3770751953125 AND marital.status != Married-civ-spouse AND workclass = Private THEN class = <=50K Cov,Cov_class,Cov_temp 0.4285; 0.53971; 0.56438, Pre, Len 0.95628,3
+INFO RULE: EXPLAN: IF age > 49.88668 AND capital.gain <= 4842.551271 AND capital.loss <= 1876.673429 AND hours.per.week <= 45.034388 THEN class = <=50K Cov,Cov_class,Cov_temp 0.15457; 0.15424; 0.20359, Pre, Len 0.75762,4
+INFO RULE: EXPLAN: IF capital.gain <= 0.0 AND education.num = 9 AND relationship = Not-in-family THEN class = <=50K Cov,Cov_class,Cov_temp 0.07647; 0.09748; 0.10071, Pre, Len 0.96787,3
+INFO RULE: EXPLAN: IF age > 45.459129 AND capital.gain <= 0.0 AND capital.loss <= 147.879185 AND hours.per.week <= 45.0 THEN class = <=50K Cov,Cov_class,Cov_temp 0.19265; 0.18849; 0.25374, Pre, Len 0.74283,4
+INFO RULE: EXPLAN: IF capital.gain <= 0.0 AND education.num = 9 THEN class = <=50K Cov,Cov_class,Cov_temp 0.30658; 0.3465; 0.4038, Pre, Len 0.8581,2
+INFO ENTRY: Explaining instance:
+ age                             40.0
+workclass                  Local-gov
+education                  Bachelors
+education.num                     13
+marital.status    Married-civ-spouse
+occupation            Prof-specialty
+relationship                    Wife
+race                           White
+sex                           Female
+capital.gain                     0.0
+capital.loss                     0.0
+hours.per.week                  40.0
+native.country         United-States
+Name: 17800, dtype: object original_outcome: >50K, predicted_outcome >50K
+INFO RULE: ANCHOR: IF age > 28.0 AND education = Bachelors AND education.num = 13.0 AND marital.status = Married-civ-spouse AND native.country = United-States AND occupation = Prof-specialty AND race = White THEN class = >50K Cov,Cov_class,Cov_temp 0.01894; 0.05187; 0.07866, Pre, Len 0.65946,7
+INFO RULE: ANCHOR: IF age > 28.0 AND education = Bachelors AND education.num = 13.0 AND occupation = Prof-specialty AND relationship = Wife THEN class = >50K Cov,Cov_class,Cov_temp 0.00348; 0.0102; 0.01446, Pre, Len 0.70588,5
+INFO RULE: ANCHOR: IF age > 37.0 AND capital.gain <= 0.0 AND education = Bachelors AND education.num = 13.0 AND marital.status = Married-civ-spouse AND native.country = United-States AND occupation = Prof-specialty THEN class = >50K Cov,Cov_class,Cov_temp 0.01228; 0.03104; 0.05102, Pre, Len 0.60833,7
+INFO RULE: ANCHOR: IF age > 28.0 AND capital.gain <= 0.0 AND education = Bachelors AND education.num = 13.0 AND marital.status = Married-civ-spouse AND native.country = United-States AND occupation = Prof-specialty AND race = White THEN class = >50K Cov,Cov_class,Cov_temp 0.01587; 0.04039; 0.0659, Pre, Len 0.6129,8
+INFO RULE: LORE: IF age > 39.46657 AND age <= 41.0 THEN class = <=50K Cov,Cov_class,Cov_temp 0.05047; 0.04355; 0.06647, Pre, Len 0.65517,2
+INFO RULE: LORE: IF marital.status = Married-civ-spouse AND occupation = Prof-specialty AND relationship = Wife AND sex = Female THEN class = >50K Cov,Cov_class,Cov_temp 0.01413; 0.03529; 0.05867, Pre, Len 0.60145,4
+INFO RULE: LORE: IF hours.per.week > 14.0 AND marital.status = Married-civ-spouse AND occupation = Prof-specialty AND relationship = Wife AND sex = Female THEN class = >50K Cov,Cov_class,Cov_temp 0.01228; 0.03104; 0.05102, Pre, Len 0.60833,5
+INFO RULE: LORE: IF age > 39.0 AND age <= 40.0 THEN class = <=50K Cov,Cov_class,Cov_temp 0.02487; 0.02157; 0.03276, Pre, Len 0.65844,2
+INFO RULE: LORE_SA: IF education != 10th AND marital.status = Married-civ-spouse AND native.country != Japan AND native.country != Hungary AND occupation = Prof-specialty AND race != Asian-Pac-Islander AND relationship = Wife AND sex != Male THEN class = >50K Cov,Cov_class,Cov_temp 0.01341; 0.03444; 0.0557, Pre, Len 0.61832,8
+INFO RULE: LORE_SA: IF education.num != 5 AND hours.per.week > 17.53827142715454 AND marital.status = Married-civ-spouse AND native.country != South AND native.country != Ireland AND occupation != Other-service AND occupation != Handlers-cleaners AND occupation != Machine-op-inspct AND occupation != Craft-repair AND race != Other AND relationship = Wife AND sex = Female THEN class = >50K Cov,Cov_class,Cov_temp 0.03501; 0.07908; 0.14541, Pre, Len 0.54386,12
+INFO RULE: LORE_SA: IF education = Bachelors AND education.num != 6 AND hours.per.week <= 85.9917984008789 AND marital.status = Married-civ-spouse AND occupation != Other-service AND occupation != Craft-repair AND occupation != Protective-serv AND race = White AND relationship = Wife AND sex != Male THEN class = >50K Cov,Cov_class,Cov_temp 0.00798; 0.02338; 0.03316, Pre, Len 0.70513,10
+INFO RULE: LORE_SA: IF education != 9th AND education != 11th AND education != 5th-6th AND hours.per.week > 6.4074931144714355 AND marital.status = Married-civ-spouse AND native.country != Puerto-Rico AND occupation = Prof-specialty AND relationship = Wife AND sex != Male THEN class = >50K Cov,Cov_class,Cov_temp 0.0128; 0.03359; 0.05315, Pre, Len 0.632,9
+INFO RULE: EXPLAN: IF age > 39.334078 AND capital.gain <= 0.0 AND marital.status = Married-civ-spouse AND relationship = Wife AND sex = Female THEN class = >50K Cov,Cov_class,Cov_temp 0.02017; 0.04209; 0.08376, Pre, Len 0.50254,5
+INFO RULE: EXPLAN: IF capital.gain <= 3407.807261 AND education = Bachelors AND hours.per.week <= 43.207671 AND marital.status = Married-civ-spouse AND relationship = Wife AND sex = Female THEN class = >50K Cov,Cov_class,Cov_temp 0.00614; 0.01616; 0.02551, Pre, Len 0.63333,6
+INFO RULE: EXPLAN: IF capital.gain <= 0.0 AND education = Bachelors AND relationship = Wife THEN class = >50K Cov,Cov_class,Cov_temp 0.00788; 0.02041; 0.03274, Pre, Len 0.62338,3
+INFO RULE: EXPLAN: IF capital.gain <= 7015.828777 AND marital.status = Married-civ-spouse AND relationship = Wife THEN class = >50K Cov,Cov_class,Cov_temp 0.0432; 0.07738; 0.17942, Pre, Len 0.43128,3
+INFO ENTRY: Explaining instance:
+ age                             41.0
+workclass                    Private
+education                  Bachelors
+education.num                     13
+marital.status    Married-civ-spouse
+occupation           Exec-managerial
+relationship                 Husband
+race                           White
+sex                             Male
+capital.gain                     0.0
+capital.loss                     0.0
+hours.per.week                  50.0
+native.country         United-States
+Name: 19215, dtype: object original_outcome: >50K, predicted_outcome >50K
+INFO RULE: ANCHOR: IF education = Bachelors AND education.num = 13.0 AND occupation = Exec-managerial AND relationship = Husband THEN class = >50K Cov,Cov_class,Cov_temp 0.02498; 0.08121; 0.10374, Pre, Len 0.78279,4
+INFO RULE: ANCHOR: IF age > 37.0 AND education = Bachelors AND education.num = 13.0 AND hours.per.week > 40.0 AND marital.status = Married-civ-spouse THEN class = >50K Cov,Cov_class,Cov_temp 0.02651; 0.07951; 0.11012, Pre, Len 0.72201,5
+INFO RULE: ANCHOR: IF education = Bachelors AND hours.per.week > 40.0 AND marital.status = Married-civ-spouse AND occupation = Exec-managerial THEN class = >50K Cov,Cov_class,Cov_temp 0.01505; 0.04847; 0.0625, Pre, Len 0.77551,4
+INFO RULE: ANCHOR: IF age > 28.0 AND education = Bachelors AND education.num = 13.0 AND marital.status = Married-civ-spouse AND native.country = United-States AND occupation = Exec-managerial AND race = White AND relationship = Husband AND sex = Male THEN class = >50K Cov,Cov_class,Cov_temp 0.02068; 0.06803; 0.08588, Pre, Len 0.79208,9
+INFO RULE: LORE: IF age > 27.0 AND hours.per.week > 45.0 AND relationship = Husband THEN class = >50K Cov,Cov_class,Cov_temp 0.12038; 0.28274; 0.5, Pre, Len 0.56548,3
+INFO RULE: LORE: IF age > 26.0 AND hours.per.week > 35.0 AND marital.status = Married-civ-spouse AND relationship = Husband THEN class = >50K Cov,Cov_class,Cov_temp 0.34712; 0.69855; 1.44175, Pre, Len 0.48452,4
+INFO RULE: LORE: IF age > 28.0 AND hours.per.week > 27.185546 AND marital.status = Married-civ-spouse AND relationship = Husband THEN class = >50K Cov,Cov_class,Cov_temp 0.34906; 0.70451; 1.44983, Pre, Len 0.48592,4
+INFO RULE: LORE: IF age > 26.0 AND hours.per.week > 40.0 THEN class = >50K Cov,Cov_class,Cov_temp 0.26727; 0.47959; 1.11012, Pre, Len 0.43202,2
+INFO RULE: LORE_SA: IF education != 11th AND education.num != 6 AND hours.per.week > 39.68734073638916 AND marital.status = Married-civ-spouse AND occupation = Exec-managerial AND relationship = Husband THEN class = >50K Cov,Cov_class,Cov_temp 0.06285; 0.18325; 0.26105, Pre, Len 0.70195,6
+INFO RULE: LORE_SA: IF age > 27.8580379486084 AND education.num != 4 AND hours.per.week > 24.549214363098145 AND marital.status != Never-married AND marital.status != Separated AND occupation = Exec-managerial AND relationship = Husband THEN class = >50K Cov,Cov_class,Cov_temp 0.06377; 0.1858; 0.26488, Pre, Len 0.70144,7
+INFO RULE: LORE_SA: IF age <= 85.74833679199219 AND age > 25.57025909423828 AND education != HS-grad AND hours.per.week > 37.49129867553711 AND occupation = Exec-managerial AND relationship = Husband THEN class = >50K Cov,Cov_class,Cov_temp 0.05221; 0.16327; 0.21684, Pre, Len 0.75294,6
+INFO RULE: LORE_SA: IF age <= 81.11835861206055 AND education.num != 4 AND hours.per.week > 23.454591751098633 AND marital.status = Married-civ-spouse AND native.country != Mexico AND occupation = Exec-managerial AND race != Other AND relationship = Husband THEN class = >50K Cov,Cov_class,Cov_temp 0.06551; 0.1892; 0.27211, Pre, Len 0.69531,8
+INFO RULE: EXPLAN: IF capital.gain <= 4556.061093 AND capital.loss <= 653.0 AND hours.per.week > 48.866171 AND marital.status = Married-civ-spouse AND relationship = Husband THEN class = >50K Cov,Cov_class,Cov_temp 0.09387; 0.18367; 0.38988, Pre, Len 0.4711,5
+INFO RULE: EXPLAN: IF capital.gain <= 0.0 AND education = Bachelors AND marital.status = Married-civ-spouse AND occupation = Exec-managerial AND relationship = Husband AND sex = Male THEN class = >50K Cov,Cov_class,Cov_temp 0.01976; 0.05995; 0.08206, Pre, Len 0.73057,6
+INFO RULE: EXPLAN: IF capital.gain <= 4881.663471 AND hours.per.week > 43.708183 AND marital.status = Married-civ-spouse AND occupation = Exec-managerial AND relationship = Husband THEN class = >50K Cov,Cov_class,Cov_temp 0.03122; 0.08631; 0.12968, Pre, Len 0.66557,5
+INFO RULE: EXPLAN: IF capital.gain <= 5086.901545 AND marital.status = Married-civ-spouse AND occupation = Exec-managerial AND relationship = Husband THEN class = >50K Cov,Cov_class,Cov_temp 0.05896; 0.15434; 0.2449, Pre, Len 0.63021,4
