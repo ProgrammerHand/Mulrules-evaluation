@@ -1,0 +1,66 @@
+Reading german_rename_vals.csv from ./data/
+Dropped columns:[]
+
+Raw NaN counts per column:
+Series([], dtype: int64)
+Numeric: ['duration', 'credit_amount', 'installment_commitment', 'residence_since', 'age', 'existing_credits', 'num_dependents'] 
+ Categorical: ['checking_status', 'credit_history', 'purpose', 'savings_status', 'employment', 'personal_status', 'other_parties', 'property_magnitude', 'other_payment_plans', 'housing', 'job', 'own_telephone', 'foreign_worker'], Continuous: ['duration', 'credit_amount', 'age']
+Num_strat: mean, Cat_strat: most_frequent
+
+Raw NaN counts per column:
+Series([], dtype: int64)
+Target_map: {'good': 0, 'bad': 1}
+Test_size: 0.3, Random_state: 42
+SMOTENC used with params: random_state = 42; categorical_features = [0, 2, 3, 5, 6, 8, 9, 11, 13, 14, 16, 18, 19]
+Classifier: random_forest Parameters: {'max_depth': 8, 'n_estimators': 50, 'random_state': 42}
+
+Test class distribution:
+       Count  Percentage
+class                   
+0        700        70.0
+1        300        30.0
+
+Train class distribution:
+       Count  Percentage
+class                   
+bad      490        50.0
+good     490        50.0
+
+Test class distribution:
+       Count  Percentage
+class                   
+good     210        70.0
+bad       90        30.0
+Train accuracy: 0.9418367346938775
+Test accuracy: 0.7366666666666667
+
+Classification Report (Train):
+              precision    recall  f1-score   support
+
+        good       0.96      0.93      0.94       490
+         bad       0.93      0.96      0.94       490
+
+    accuracy                           0.94       980
+   macro avg       0.94      0.94      0.94       980
+weighted avg       0.94      0.94      0.94       980
+
+
+Classification Report (Test):
+              precision    recall  f1-score   support
+
+        good       0.82      0.80      0.81       210
+         bad       0.56      0.60      0.58        90
+
+    accuracy                           0.74       300
+   macro avg       0.69      0.70      0.69       300
+weighted avg       0.74      0.74      0.74       300
+
+Initializing Anchor Explainer with params: precision_treshold = 0.9, beam_size = 8, feature_names = Index(['checking_status', 'duration', 'credit_history', 'purpose',
+       'credit_amount', 'savings_status', 'employment',
+       'installment_commitment', 'personal_status', 'other_parties',
+       'residence_since', 'property_magnitude', 'age', 'other_payment_plans',
+       'housing', 'existing_credits', 'job', 'num_dependents', 'own_telephone',
+       'foreign_worker'],
+      dtype='object'), categorical_names = {0: ['between 0 and 200', 'greater 200', 'less 0', 'no checking'], 2: ['all paid', 'critical/other existing credit', 'delayed previously', 'existing paid', 'no credits/all paid'], 3: ['business', 'domestic appliance', 'education', 'furniture/equipment', 'new car', 'other', 'radio/tv', 'repairs', 'retraining', 'used car'], 5: ['between 100 and 500', 'between 500 and 1000', 'greater 1000', 'less 100', 'no known savings'], 6: ['between 1 and 4 years', 'between 4 and 7 years', 'greater 7 years', 'less 1 year', 'unemployed'], 8: ['female div/dep/mar', 'male div/sep', 'male mar/wid', 'male single'], 9: ['co applicant', 'guarantor', 'none'], 11: ['car', 'life insurance', 'no known property', 'real estate'], 13: ['bank', 'none', 'stores'], 14: ['for free', 'own', 'rent'], 16: ['high qualif/self emp/mgmt', 'skilled', 'unemp/unskilled non res', 'unskilled resident'], 18: ['none', 'yes'], 19: ['no', 'yes']}, seed = None, iter_limit = 15
+Initializing LORE Explainer with params: ng_function <function genetic_neighborhood at 0x000001B74FDC7CE0>, discrete_use_probabilities True,continuous_function_estimation False, iter_limit = 15
+Initializing EXPLAN Explainer with config: N_samples=3000, tau=250, iter_limit=15 

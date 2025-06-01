@@ -1,0 +1,60 @@
+INFO : Reading german.csv from ./data/
+INFO : Numeric: ['duration', 'credit_amount', 'installment_commitment', 'residence_since', 'age', 'existing_credits', 'num_dependents'] 
+ Categorical: ['checking_status', 'credit_history', 'purpose', 'savings_status', 'employment', 'personal_status', 'other_parties', 'property_magnitude', 'other_payment_plans', 'housing', 'job', 'own_telephone', 'foreign_worker'], Continuous: ['duration', 'credit_amount', 'age']
+INFO : Target_map: {'good': 0, 'bad': 1}
+INFO : Test_size: 0.3, Random_state: 42
+INFO : Classifier: simpleNN Parameters: {'input_size': 61}
+INFO : Train accuracy: 0.7571428571428571
+INFO : Test accuracy: 0.7266666666666667
+INFO : 
+Classification Report (Train):
+              precision    recall  f1-score   support
+
+        good       0.81      0.85      0.83       490
+         bad       0.61      0.53      0.57       210
+
+    accuracy                           0.76       700
+   macro avg       0.71      0.69      0.70       700
+weighted avg       0.75      0.76      0.75       700
+
+INFO : 
+Classification Report (Test):
+              precision    recall  f1-score   support
+
+        good       0.82      0.82      0.82       210
+         bad       0.58      0.58      0.58        90
+
+    accuracy                           0.75       300
+   macro avg       0.70      0.70      0.70       300
+weighted avg       0.75      0.75      0.75       300
+
+INFO : Initializing Anchor Explainer with params: precision_treshold = 0.9, beam_size = 2, feature_names = Index(['checking_status', 'duration', 'credit_history', 'purpose',
+       'credit_amount', 'savings_status', 'employment',
+       'installment_commitment', 'personal_status', 'other_parties',
+       'residence_since', 'property_magnitude', 'age', 'other_payment_plans',
+       'housing', 'existing_credits', 'job', 'num_dependents', 'own_telephone',
+       'foreign_worker'],
+      dtype='object'), categorical_names = {0: ['0<=X<200', '<0', '>=200', 'no checking'], 2: ['all paid', 'critical/other existing credit', 'delayed previously', 'existing paid', 'no credits/all paid'], 3: ['business', 'domestic appliance', 'education', 'furniture/equipment', 'new car', 'other', 'radio/tv', 'repairs', 'retraining', 'used car'], 5: ['100<=X<500', '500<=X<1000', '<100', '>=1000', 'no known savings'], 6: ['1<=X<4', '4<=X<7', '<1', '>=7', 'unemployed'], 8: ['female div/dep/mar', 'male div/sep', 'male mar/wid', 'male single'], 9: ['co applicant', 'guarantor', 'none'], 11: ['car', 'life insurance', 'no known property', 'real estate'], 13: ['bank', 'none', 'stores'], 14: ['for free', 'own', 'rent'], 16: ['high qualif/self emp/mgmt', 'skilled', 'unemp/unskilled non res', 'unskilled resident'], 18: ['none', 'yes'], 19: ['no', 'yes']}, seed = None
+INFO : Initializing LUX with params neighborhood_size = 35, max_depth = 10, min_samples = 5, node_size_limit = 1, grow_confidence_threshold = 0
+INFO : Initializing EXPLAN Explainer with config: N_samples=3000 tau=250
+INFO ENTRY: Explaining instance: checking_status                  no checking
+duration                                  36
+credit_history                 existing paid
+purpose                             used car
+credit_amount                           8133
+savings_status                          <100
+employment                            1<=X<4
+installment_commitment                     1
+personal_status           female div/dep/mar
+other_parties                           none
+residence_since                            2
+property_magnitude            life insurance
+age                                       30
+other_payment_plans                     bank
+housing                                  own
+existing_credits                           1
+job                                  skilled
+num_dependents                             1
+own_telephone                           none
+foreign_worker                           yes
+Name: 70, dtype: object outcome: good

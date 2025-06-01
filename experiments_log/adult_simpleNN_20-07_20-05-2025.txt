@@ -1,0 +1,64 @@
+INFO : Reading adult.csv from ./data/
+INFO : Numeric: ['age', 'capital.gain', 'capital.loss', 'hours.per.week'] 
+ Categorical: ['workclass', 'education', 'education.num', 'marital.status', 'occupation', 'relationship', 'race', 'sex', 'native.country'], Continuous: ['age', 'capital.gain', 'capital.loss', 'hours.per.week']
+INFO : Target_map: {'<=50K': 0, '>50K': 1}
+INFO : Test_size: 0.3, Random_state: 42
+INFO : Classifier: simpleNN Parameters: {'input_size': 122}
+INFO : Train accuracy: 0.8352492102492103
+INFO : Test accuracy: 0.8307912785341386
+INFO : 
+Classification Report (Train):
+              precision    recall  f1-score   support
+
+       <=50K       0.92      0.86      0.89     17303
+        >50K       0.63      0.77      0.69      5489
+
+    accuracy                           0.84     22792
+   macro avg       0.78      0.81      0.79     22792
+weighted avg       0.85      0.84      0.84     22792
+
+INFO : 
+Classification Report (Test):
+              precision    recall  f1-score   support
+
+       <=50K       0.92      0.85      0.88      7417
+        >50K       0.62      0.75      0.68      2352
+
+    accuracy                           0.83      9769
+   macro avg       0.77      0.80      0.78      9769
+weighted avg       0.84      0.83      0.83      9769
+
+INFO : Initializing Anchor Explainer with params: precision_treshold = 0.9, beam_size = 2, feature_names = Index(['age', 'workclass', 'education', 'education.num', 'marital.status',
+       'occupation', 'relationship', 'race', 'sex', 'capital.gain',
+       'capital.loss', 'hours.per.week', 'native.country'],
+      dtype='object'), categorical_names = {1: ['Federal-gov', 'Local-gov', 'Never-worked', 'Private', 'Self-emp-inc', 'Self-emp-not-inc', 'State-gov', 'Without-pay', 'nan'], 2: ['10th', '11th', '12th', '1st-4th', '5th-6th', '7th-8th', '9th', 'Assoc-acdm', 'Assoc-voc', 'Bachelors', 'Doctorate', 'HS-grad', 'Masters', 'Preschool', 'Prof-school', 'Some-college'], 3: ['1', '10', '11', '12', '13', '14', '15', '16', '2', '3', '4', '5', '6', '7', '8', '9'], 4: ['Divorced', 'Married-AF-spouse', 'Married-civ-spouse', 'Married-spouse-absent', 'Never-married', 'Separated', 'Widowed'], 5: ['Adm-clerical', 'Armed-Forces', 'Craft-repair', 'Exec-managerial', 'Farming-fishing', 'Handlers-cleaners', 'Machine-op-inspct', 'Other-service', 'Priv-house-serv', 'Prof-specialty', 'Protective-serv', 'Sales', 'Tech-support', 'Transport-moving', 'nan'], 6: ['Husband', 'Not-in-family', 'Other-relative', 'Own-child', 'Unmarried', 'Wife'], 7: ['Amer-Indian-Eskimo', 'Asian-Pac-Islander', 'Black', 'Other', 'White'], 8: ['Female', 'Male'], 12: ['Cambodia', 'Canada', 'China', 'Columbia', 'Cuba', 'Dominican-Republic', 'Ecuador', 'El-Salvador', 'England', 'France', 'Germany', 'Greece', 'Guatemala', 'Haiti', 'Holand-Netherlands', 'Honduras', 'Hong', 'Hungary', 'India', 'Iran', 'Ireland', 'Italy', 'Jamaica', 'Japan', 'Laos', 'Mexico', 'Nicaragua', 'Outlying-US(Guam-USVI-etc)', 'Peru', 'Philippines', 'Poland', 'Portugal', 'Puerto-Rico', 'Scotland', 'South', 'Taiwan', 'Thailand', 'Trinadad&Tobago', 'United-States', 'Vietnam', 'Yugoslavia', 'nan']}, seed = None
+INFO : Initializing LUX with params neighborhood_size = 1139, max_depth = 10, min_samples = 5, node_size_limit = 1, grow_confidence_threshold = 0
+INFO : Initializing EXPLAN Explainer with config: N_samples=3000 tau=250
+INFO ENTRY: Explaining instance: age                          25
+workclass               Private
+education             Bachelors
+education.num                13
+marital.status    Never-married
+occupation         Craft-repair
+relationship      Not-in-family
+race                      White
+sex                        Male
+capital.gain                  0
+capital.loss                  0
+hours.per.week               40
+native.country           Mexico
+Name: 8453, dtype: object outcome: <=50K
+INFO ENTRY: Explaining instance: age                              41
+workclass                   Private
+education                      10th
+education.num                     6
+marital.status        Never-married
+occupation        Handlers-cleaners
+relationship              Unmarried
+race                          White
+sex                            Male
+capital.gain                      0
+capital.loss                      0
+hours.per.week                   50
+native.country        United-States
+Name: 12168, dtype: object outcome: <=50K
