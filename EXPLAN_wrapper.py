@@ -4,19 +4,36 @@ from EXPLAN.LORE import util
 from EXPLAN import explan
 from Rule_wrapper import rule_wrapper
 import numpy as np
+from collections import Counter
+import time
 
 class explan_object:
 
-    def __init__(self, dataset_name, raw, encoded_data, encoders, X_test, continuous_col_names, categorical_col_names, target_val, target_name = 'class'):
-        self.X_test = X_test
-        self.raw = raw
+    def __init__(
+            self,
+            dataset_name,
+            raw,
+            encoded_data,
+            encoders,
+            X_test,
+            continuous_col_names,
+            numeric_cols_names_datasets,
+            categorical_col_names,
+            target_val,
+            target_name='class'
+    ):
         self.dataset_name = dataset_name
-        self.target_name = target_name
-        self.continuous_col_names = continuous_col_names
-        self.categorical_col_names = categorical_col_names
-        self.target_val = target_val
+        self.raw = raw
         self.encoded_data = encoded_data
         self.encoders = copy.deepcopy(encoders)
+        self.X_test = X_test
+        self.continuous_col_names = continuous_col_names
+        self.numeric_cols_names = numeric_cols_names_datasets
+        self.categorical_col_names = categorical_col_names
+        self.target_val = target_val
+        self.target_name = target_name
+
+        # optional/default attributes
         self.inst = None
         self.N_samples = None
         self.tau = None
@@ -61,35 +78,58 @@ class explan_object:
 
         return dataset
 
-    def init_explainer(self, categorical_cols, target_encoder, N_samples = 3000, tau = 250):
+    def init_explainer(self, categorical_cols, target_encoder, iter_limit=15, N_samples = 3000, tau = 250):
         self.dataset = self.prepare_dataset(categorical_cols, target_encoder)
         self.N_samples = N_samples
         self.tau = tau
-        return f"Initializing EXPLAN Explainer with config: N_samples={N_samples} tau={tau}"
+        self.iter_limit = iter_limit
+        return f"Initializing EXPLAN Explainer with config: N_samples={self.N_samples}, tau={self.tau}, iter_limit={self.iter_limit} "
 
     def explain(self, amount, idx, predict_fn_anchor):
         instance2explain = np.array(self.X_test.iloc[idx])
         explanations = []
         infos = []
-        while len(explanations) < amount:
+        rejected_count = Counter({i: 0 for i in range(amount)})
+        i = 0
+        start_rule_time = time.time()
+        # while len(explanations) < amount:
+        for n in range(self.iter_limit):
+            print(n)
             explanation, info = explan.Explainer(instance2explain,
                                                        predict_fn_anchor,
                                                        self.dataset,
                                                        N_samples=self.N_samples,
                                                        tau=self.tau)
             if len(explanations) > 0:
-                flag = False
-                for rule in explanations:
-                    if rule.matches_raw_rule(explanation[1], explanation[0], self.continuous_col_names):
-                        flag = True
-                        break
-                if not flag:
-                    explanations.append(rule_wrapper.from_rule(explanation[1], explanation[0], "EXPLAN", self.continuous_col_names))
+                if amount - len(explanations) < self.iter_limit - n:
+                    flag = False
+                    for rule in explanations:
+                        if rule.matches_raw_rule(explanation[1], explanation[0], self.numeric_cols_names):
+                            flag = True
+                            rejected_count[i] += 1
+                            break
+                    if not flag:
+                        elapsed = time.time() - start_rule_time
+                        explanations.append(rule_wrapper.from_rule(explanation[1], explanation[0], "EXPLAN", rejected_count[i], elapsed, False, self.numeric_cols_names))
+                        i += 1
+                        start_rule_time = time.time()
+                else:
+                    elapsed = time.time() - start_rule_time
+                    explanations.append(
+                        rule_wrapper.from_rule(explanation[1], explanation[0], "EXPLAN", rejected_count[i], elapsed, True, self.numeric_cols_names))
+                    i += 1
+                    start_rule_time = time.time()
+
             else:
-                explanations.append(rule_wrapper.from_rule(explanation[1], explanation[0], "EXPLAN", self.continuous_col_names))
+                elapsed = time.time() - start_rule_time
+                explanations.append(rule_wrapper.from_rule(explanation[1], explanation[0], "EXPLAN", rejected_count[i], elapsed, False, self.numeric_cols_names))
+                i += 1
+                start_rule_time = time.time()
             # if all(old_exp != explanation for old_exp in explanations):
             #     explanations.append(explanation)
             #     infos.append(info)
+            if len(explanations) >= amount:
+                break
         # return explanations, infos
         return explanations
 

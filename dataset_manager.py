@@ -5,6 +5,7 @@ from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import OrdinalEncoder, OneHotEncoder, LabelEncoder, StandardScaler
+from imblearn.over_sampling import SMOTENC
 
 
 class dataset_object:
@@ -115,8 +116,6 @@ class dataset_object:
         # return f"Target_map: {self.target_map}"
 
 
-    # def target_raw(self)->str:
-
     def init_encoders(self):
         unique_categories = [self.data.iloc[:, col].astype(str).unique().tolist() for col in self.categorical_cols]
         self.ordinal_encoder = ColumnTransformer(
@@ -131,12 +130,20 @@ class dataset_object:
 
         # self.label_encoders = {col: LabelEncoder().fit(self.data[col]) for col in self.categorical_col_names}
         self.label_encoders = {col: LabelEncoder().fit(self.data.iloc[:, col]) for col in self.categorical_cols}
-    def split_dataset(self, test_size=0.3,  random_state=42):
+
+    def split_dataset(self, test_size=0.3, random_state=42):
         self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(self.data, self.target, test_size=0.3, random_state=42, stratify=self.target)
         if self.continuous_col_names:
             for col in self.continuous_col_names:
                 self.standard_scalers[col] = StandardScaler().fit(self.X_train[[col]])
         return f"Test_size: {test_size}, Random_state: {random_state}"
+
+    def smote_oversample(self, custom_scaler, random_state = 42):
+        smote_nc = SMOTENC(categorical_features = self.categorical_cols,random_state=random_state)
+        X_train_scaled = custom_scaler.transform(self.X_train)
+        X_train_oversampled, self.y_train = smote_nc.fit_resample(X_train_scaled, self.y_train)
+        self.X_train = custom_scaler.inverse_transform(X_train_oversampled)
+        return f"SMOTENC used with params: random_state = {random_state}; categorical_features = {self.categorical_cols}"
 
     def label_encode_features(self, X, categorical_cols, categorical_col_names) -> pd.DataFrame:
         X_copy = X.copy()

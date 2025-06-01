@@ -13,21 +13,24 @@ class CustomScaler(BaseEstimator, TransformerMixin):
         return self  # No fitting needed here if already fitted outside
 
     def transform(self, X):
-        return self._apply_scalers(X)
+        return self._apply_scalers(X, method='transform')
 
-    def _apply_scalers(self, X):
+    def inverse_transform(self, X):
+        return self._apply_scalers(X, method='inverse_transform')
+
+    def _apply_scalers(self, X, method='transform'):
         temp = X.copy()
-        if type(temp) == np.ndarray:
+        if isinstance(temp, np.ndarray):
             for col in self.continuous_cols:
                 scaler = self.scalers_dict[self.col_index_to_name[col]]
-                temp[:, col] = scaler.transform(temp[:, col].reshape(-1, 1)).flatten()
-        elif type(temp) == pd.DataFrame:
+                temp[:, col] = getattr(scaler, method)(temp[:, col].reshape(-1, 1)).flatten()
+        elif isinstance(temp, pd.DataFrame):
             for col in self.continuous_col_names:
                 scaler = self.scalers_dict[col]
-                temp[col] = scaler.transform(temp[[col]])
+                temp[col] = getattr(scaler, method)(temp[[col]])
         else:
             temp = np.array(temp)
             for col in self.continuous_cols:
                 scaler = self.scalers_dict[self.col_index_to_name[col]]
-                temp[:, col] = scaler.transform(np.array(temp)[:, col].reshape(-1, 1)).flatten()
+                temp[:, col] = getattr(scaler, method)(temp[:, col].reshape(-1, 1)).flatten()
         return temp

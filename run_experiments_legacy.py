@@ -25,9 +25,9 @@ def setup_logger(log_file, name):
     logger.addHandler(file_handler)
     return logger
 
-# experiment_datasets = ["adult", "german"]
+experiment_datasets = ["adult", "german"]
 # experiment_datasets = ["titanic_nan_prepr", "boston_nan_prepr"]
-experiment_datasets = ["boston_nan_prepr"]
+# experiment_datasets = ["boston_nan_prepr"]
 rules_amount = 5
 entries_amount = 3
 log_folder_name = "experiments_log"
@@ -37,7 +37,7 @@ if not os.path.exists("experiments_log"):
 for name in experiment_datasets:
     log_file = os.path.join(log_folder_name, name + ".txt")
     logger = setup_logger(log_file, name)
-    dataset = dataset_manager.dataset_object(name)
+    dataset = dataset_manager_legacy.dataset_object(name)
     dataset.label_encoding()
     dataset.onehot_encode()
     logger.info(dataset.split_dataset(use_labeled=True, use_ohe=False, random_state=42))
@@ -62,9 +62,9 @@ for name in experiment_datasets:
 
 
     # Lore
-    lore_explainer = LORE.lore_object(dataset.preprocessor.transform(dataset.X_train), dataset.y_train,
-                                      dataset.preprocessor.transform(dataset.X_test), dataset.y_test, dataset.raw,
-                                      config={"neigh_type": "geneticp", "size": 1000, "ocr": 0.1, "ngen": 10})
+    lore_explainer = LORE.lore_object_old(dataset.preprocessor.transform(dataset.X_train), dataset.y_train,
+                                          dataset.preprocessor.transform(dataset.X_test), dataset.y_test, dataset.raw,
+                                          config={"neigh_type": "geneticp", "size": 1000, "ocr": 0.1, "ngen": 10})
     logger.info(lore_explainer.init_explainer(bbox))
 
 
@@ -72,7 +72,7 @@ for name in experiment_datasets:
     lux_explainer = LUX.lux_object(dataset.preprocessor.transform(dataset.X_train), dataset.y_train,
                                    dataset.preprocessor.transform(dataset.X_test), dataset.y_test)
 
-    logger.info(lux_explainer.init_explainter(clf.predict_proba))
+    logger.info(lux_explainer.init_explainer(clf.predict_proba))
 
     for idx in idxs2e:
         anchor_explainer.get_instance(idx)
@@ -80,7 +80,7 @@ for name in experiment_datasets:
         lux_explainer.get_instance(idx)
         #explain
         logger.info(
-            f"Explaining instance: {dataset.data_labeled.index[(dataset.data_labeled == dataset.X_test[idx]).all(axis=1)].tolist()[0]} outcome: {dataset.target_names[dataset.y_test.iloc[idx]]}")
+            f"Explaining instance: {dataset.raw.index[(dataset.data_labeled == dataset.X_test[idx]).all(axis=1)].tolist()[0]} outcome: {dataset.target_names[dataset.y_test.iloc[idx]]}")
         print(f"Explaining instance: {dataset.data_labeled.index[(dataset.data_labeled == dataset.X_test[idx]).all(axis=1)].tolist()[0]} outcome: {dataset.target_names[dataset.y_test.iloc[idx]]}")
         explanations = anchor_explainer.explain(rules_amount, beam_size=5, verbose=False)
         for rule in explanations:
@@ -90,4 +90,4 @@ for name in experiment_datasets:
             logger.info(lore_explainer.print_explanation(rule))
         explanation = lux_explainer.explain(dataset.data_ohe, dataset.target, dataset.target_map,
                                             dataset.numerical_features)
-        logger.info(lux_explainer.print_expalanation(explanation))
+        logger.info(lux_explainer.print_explanation(explanation))

@@ -53,7 +53,7 @@ class TabularDataset(Dataset):
          >>>   }
     """
 
-    def __init__(self, data: DataFrame, class_name: str = None, categorial_columns:list = None, ordinal_columns:list = None):
+    def __init__(self, data: DataFrame, class_name: str = None, categorial_columns:list = None, numerical_columns:list = None, ordinal_columns:list = None):
 
         self.class_name = class_name
         self.df = data
@@ -65,9 +65,9 @@ class TabularDataset(Dataset):
         self.descriptor = {'numeric': {}, 'categorical': {}, 'ordinal': {}}
 
         # creation of a default version of descriptor
-        self.update_descriptor(categorial_columns=categorial_columns, ordinal_columns=ordinal_columns)
+        self.update_descriptor(categorial_columns=categorial_columns, numerical_columns=numerical_columns, ordinal_columns=ordinal_columns)
 
-    def update_descriptor(self, categorial_columns:list = None, ordinal_columns:list = None):
+    def update_descriptor(self, categorial_columns:list = None, numerical_columns:list = None, ordinal_columns:list = None):
         """
         it creates the dataset descriptor dictionary
         """
@@ -86,7 +86,7 @@ class TabularDataset(Dataset):
                         'distinct_values': list(self.df[feature].unique()),
                         'count': {x: len(self.df[self.df[feature] == x]) for x in list(self.df[feature].unique())}}
                 self.descriptor['ordinal'][feature] = desc
-            elif feature in self.df.select_dtypes(include=np.number).columns.tolist():
+            elif feature in self.df.select_dtypes(include=np.number).columns.tolist() and feature in numerical_columns:
                 # numerical
                 desc = {'index': index,
                         'min': self.df[feature].min(),

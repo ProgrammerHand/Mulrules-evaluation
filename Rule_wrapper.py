@@ -10,16 +10,33 @@ class rule_wrapper:
         explainer: str,
         premises: List[str],
         consequence: str,
+        raw,
+        rejected_count: int,
+        at_limit: bool,
+        elapsed_time
     ):
         self.premises: List[Dict[str, Union[str, float]]] = premises
         self.consequence: Dict[str, Union[str, float]] = consequence
-        self.explainer = explainer
+        self.explainer: str = explainer
+        self.raw = raw
+        self.rejected_count: int = rejected_count
+        self.at_limit: bool = at_limit
+        self.elapsed_time = elapsed_time
 
     @classmethod
-    def from_rule(cls, rule, outcome, explainer, numeric_cols=None):
+    def from_rule(cls, rule, outcome, explainer, rejected_count, elapsed_time, at_limit=False, numeric_cols=None):
         if explainer == 'ANCHOR':
-            premises, consequence = [cls.anchor_parser(p) for p in rule], cls.anchor_parser(outcome)
+            premises = []
+            for p in rule:
+                if cls.is_compound_condition(p):
+                    for simple_rule in cls.split_compound_condition(None, p):
+                        for attr_simple, cond_str_simple in simple_rule.items():
+                            premises.append(cls.lore_parser(attr_simple, cond_str_simple, numeric_cols))
+                else:
+                    premises.append(cls.anchor_parser(p))
+            consequence = cls.anchor_parser(outcome)
             premises = sorted(premises, key=lambda r: r['attr'])
+
         elif explainer == 'LORE':
             premises = []
             for attr, cond_str in rule.items():
@@ -32,9 +49,11 @@ class rule_wrapper:
             for attr, cond_str in outcome.items():
                 consequence = cls.lore_parser(attr, cond_str, None)
             premises = sorted(premises, key=lambda r: r['attr'])
+
         elif explainer == 'LORE_SA':
             premises, consequence = [cls.lore_sa_parser(p) for p in rule], cls.lore_sa_parser(outcome)
             premises = sorted(premises, key=lambda r: r['attr'])
+
         elif explainer == 'EXPLAN':
             premises = []
             for attr, cond_str in rule.items():
@@ -50,7 +69,7 @@ class rule_wrapper:
         else:
             raise ValueError(f"Unknown explainer: {explainer}")
 
-        return cls(explainer, premises, consequence)
+        return cls(explainer, premises, consequence, rule, rejected_count, at_limit, elapsed_time)
 
     @staticmethod
     def anchor_parser(rule: str) -> Dict[str, Union[str, str | float]]:
@@ -103,7 +122,7 @@ class rule_wrapper:
 
     @staticmethod
     def _op_func(op_str):
-        print(f"Taking {op_str}")
+        # print(f"Taking {op_str}")
         return {
             '<': operator.lt,
             '<=': operator.le,
@@ -124,7 +143,7 @@ class rule_wrapper:
 
         # match patterns like: 1848.0< attr <=2005.0 OR 10 <= attr < 20
         compound_pattern = re.compile(
-            r"^\s*([0-9.eE+-]+)\s*(<|<=)\s*(\w+)\s*(<|<=|>=|>|=|!=)\s*([0-9.eE+-]+)\s*$"
+            r"^\s*([0-9.eE+-]+)\s*(<|<=)\s*([\w\.]+)\s*(<|<=|>=|>|=|!=)\s*([0-9.eE+-]+)\s*$"
         )
 
         return bool(compound_pattern.match(cond))
@@ -136,7 +155,7 @@ class rule_wrapper:
         into two simple conditions: 'capital.loss > 1848.0' and 'capital.loss <= 2005.0'
         """
         pattern = re.compile(
-            r"^\s*([0-9.eE+-]+)\s*(<|<=)\s*(\w+)\s*(<|<=|>=|>|=|!=)\s*([0-9.eE+-]+)\s*$"
+            r"^\s*([0-9.eE+-]+)\s*(<|<=)\s*([\w\.]+)\s*(<|<=|>=|>|=|!=)\s*([0-9.eE+-]+)\s*$"
         )
         match = pattern.match(cond.strip())
         if not match:
@@ -156,11 +175,18 @@ class rule_wrapper:
         """Compares a raw rule to the stored one """
 
         if self.explainer == 'ANCHOR':
-            compared_premises, compared_consequence = [self.anchor_parser(p) for p in raw_rule], self.anchor_parser(raw_outcome)
+            compared_premises = []
+            for p in raw_rule:
+                if self.is_compound_condition(p):
+                    for simple_rule in self.split_compound_condition(None, p):
+                        for attr_simple, cond_str_simple in simple_rule.items():
+                            compared_premises.append(self.lore_parser(attr_simple, cond_str_simple, numeric_cols))
+                else:
+                    compared_premises.append(self.anchor_parser(p))
+            compared_consequence = self.anchor_parser(raw_outcome)
             compared_premises = sorted(compared_premises, key=lambda r: r['attr'])
+
         elif self.explainer == 'LORE':
-            # compared_premises, compared_consequence = [self.lore_parser(p, numeric_cols) for p in raw_rule], self.lore_parser(raw_outcome)
-            # compared_premises = sorted(compared_premises, key=lambda r: r['attr'])
             compared_premises = []
             for attr, cond_str in raw_rule.items():
                 if self.is_compound_condition(cond_str):
@@ -172,9 +198,11 @@ class rule_wrapper:
             for attr, cond_str in raw_outcome.items():
                 compared_consequence = self.lore_parser(attr, cond_str, None)
             compared_premises = sorted(compared_premises, key=lambda r: r['attr'])
+
         elif self.explainer == 'LORE_SA':
             compared_premises, compared_consequence = [self.lore_sa_parser(p) for p in raw_rule], self.lore_sa_parser(raw_outcome)
             compared_premises = sorted(compared_premises, key=lambda r: r['attr'])
+
         elif self.explainer == 'EXPLAN':
             compared_premises = []
             for attr, cond_str in raw_rule.items():
@@ -200,7 +228,7 @@ class rule_wrapper:
         return op_func(attr_series, cond['val'])
         # return op_func(cond_type(df[cond['attr']]), cond['val'])
 
-    def evaluate_on(self, df: pd.DataFrame) -> dict:
+    def evaluate_on(self, df: pd.DataFrame) -> Dict[str, float]:
         # premises mask
         mask = pd.Series([True] * len(df), index=df.index)
         for cond in self.premises:
@@ -223,8 +251,21 @@ class rule_wrapper:
             outcome_mask = self._apply_condition(covered, self.consequence)
             precision = outcome_mask.mean()
 
+        # if not self.at_limit:
+        #     result = f"Cov,Cov_class,Cov_temp {round(coverage, 5)}; {round(local_cov_val, 5)}; {round(temp_local_cov_val, 5)}, Pre, Len, Reject, Elapsed_time {round(precision, 5)}; {len(self.premises)}; {self.rejected_count}; {self.elapsed_time}"
+        # else:
+        #     result = f"Cov,Cov_class,Cov_temp {round(coverage, 5)}; {round(local_cov_val, 5)}; {round(temp_local_cov_val, 5)}, Pre, Len, Reject, Elapsed_time {round(precision, 5)};{len(self.premises)};{self.rejected_count}; {self.elapsed_time}; AT LIMIT"
 
-        return f"Cov,Cov_class,Cov_temp {round(coverage, 5)}; {round(local_cov_val, 5)}; {round(temp_local_cov_val, 5)}, Pre, Len {round(precision, 5)},{len(self.premises)}"
+        result = {
+        "coverage": round(coverage, 5),
+        "local_class_coverage": round(local_cov_val, 5),
+        "precision": round(precision, 5),
+        "rule_length": len(self.premises),
+        "rejected": self.rejected_count,
+        "elapsed_time": round(self.elapsed_time, 5)
+        }
+
+        return result
 
     def get_rule(self):
         # join premises as "attr op val" separated by " AND "

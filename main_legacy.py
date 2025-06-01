@@ -1,4 +1,4 @@
-import dataset_manager
+import dataset_manager_legacy
 import Anchor
 import LORE
 import LUX
@@ -6,7 +6,7 @@ from sklearn.ensemble import AdaBoostClassifier, RandomForestClassifier
 from sklearn.metrics import accuracy_score
 from xailib.models.sklearn_classifier_wrapper import sklearn_classifier_wrapper
 
-dataset = dataset_manager.dataset_object("adult")
+dataset = dataset_manager_legacy.dataset_object("adult")
 dataset.label_encoding()
 dataset.onehot_encode()
 dataset.split_dataset(use_labeled = True, use_ohe=False, random_state=42)
@@ -40,7 +40,7 @@ print("test")
 
 # dataset.split_dataset(use_ohe=True, random_state=0)
 
-lore_explainer = LORE.lore_object(dataset.preprocessor.transform(dataset.X_train), dataset.y_train, dataset.preprocessor.transform(dataset.X_test), dataset.y_test, dataset.raw, config = {"neigh_type": "geneticp", "size": 1000, "ocr": 0.1, "ngen": 10})
+lore_explainer = LORE.lore_object_old(dataset.preprocessor.transform(dataset.X_train), dataset.y_train, dataset.preprocessor.transform(dataset.X_test), dataset.y_test, dataset.raw, config = {"neigh_type": "geneticp", "size": 1000, "ocr": 0.1, "ngen": 10})
 lore_explainer.init_explainer(bbox)
 lore_explainer.get_instance(idx)
 
@@ -69,8 +69,8 @@ for elem in explanations:
 # lux_explainer = LUX.lux_object(dataset.X_train, dataset.y_train, dataset.X_test, dataset.y_test)
 lux_explainer = LUX.lux_object(dataset.preprocessor.transform(dataset.X_train), dataset.y_train, dataset.preprocessor.transform(dataset.X_test), dataset.y_test)
 lux_explainer.get_instance(idx)
-# lux_explainer.init_explainter(wrapped_predict_proba)
-lux_explainer.init_explainter(clf.predict_proba)
+# lux_explainer.init_explainer(wrapped_predict_proba)
+lux_explainer.init_explainer(clf.predict_proba)
 
 explanations = []
 explanation = lux_explainer.explain(dataset.data_ohe, dataset.target, dataset.target_map, dataset.numerical_features)
@@ -78,7 +78,7 @@ explanations.append(explanation)
 explanation = lux_explainer.explain(dataset.data_labeled, dataset.target, dataset.target_map, dataset.numerical_features)
 explanations.append(explanation)
 for elem in explanations:
-    lux_explainer.print_expalanation(elem)
+    lux_explainer.print_explanation(elem)
 
 # while len(explanations[1]) < amount:
 #     explanation = lux_explainer.explain(dataset.data_ohe, dataset.target, dataset.target_map)

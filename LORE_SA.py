@@ -22,26 +22,29 @@ from lore_sa.encoder_decoder import ColumnTransformerEnc
 from lore_sa.lore import Lore
 from lore_sa.surrogate import DecisionTreeSurrogate
 from Rule_wrapper import rule_wrapper
+from collections import Counter
+import time
 from sklearn.pipeline import make_pipeline
 
 class lore_sa_object:
 
-    def __init__(self, name, numeric_col_names, categorical_col_names, X_test, y_test, raw , target_name = 'class'):
-        self.dataset = TabularDataset.from_csv(('data/' + name), numeric_col_names, categorical_col_names, class_name=target_name[0], dropna = False)
-        self.dataset.df = raw
-        self.dataset.update_descriptor(categorical_col_names)
+    def __init__(self, name, numeric_col_names, categorical_col_names, X_test, y_test, raw, train_df, target_name = 'class'):
+        self.dataset = TabularDataset(data=raw, class_name="class", categorial_columns=categorical_col_names, numerical_columns=numeric_col_names)
+        self.dataset.df = train_df
+        # self.dataset.update_descriptor(categorical_col_names)
         self.X_test = X_test
         self.y_test = y_test
-        self.raw = raw
+        self.train_df = train_df
         self.tabularLore = None
         self.inst = None
 
-    def init_explainer(self, bbox):
+    def init_explainer(self, bbox, iter_limit=15):
         enc = ColumnTransformerEnc(self.dataset.descriptor)
         generator = GeneticGenerator(bbox, self.dataset, enc)
         surrogate = DecisionTreeSurrogate()
         self.tabularLoreExplainer = Lore(bbox, self.dataset, enc, generator, surrogate)
-        # return f"Initializing LORE Explainer with config: {self.config}"
+        self.iter_limit = iter_limit
+        return f"Initializing LORE_SA Explainer with params: iter_limit = {self.iter_limit}"
 
     def get_instance(self, idx):
         if type(self.X_test) == np.ndarray:
@@ -57,18 +60,42 @@ class lore_sa_object:
 
     def explain(self, amount):
         explanations = []
-        while len(explanations) < amount:
+        rejected_count = Counter({i: 0 for i in range(amount)})
+        i = 0
+        start_rule_time = time.time()
+        # while len(explanations) < amount:
+        for n in range(self.iter_limit):
+            print(n)
             explanation = self.tabularLoreExplainer.explain(self.inst)
             if len(explanations) > 0:
-                flag = False
-                for rule in explanations:
-                    if rule.matches_raw_rule(explanation["rule"]["premises"], explanation["rule"]["consequence"]):
-                        flag = True
-                        break
-                if not flag:
-                    explanations.append(rule_wrapper.from_rule(explanation["rule"]["premises"], explanation["rule"]["consequence"], "LORE_SA"))
+                if amount - len(explanations) < self.iter_limit - n:
+                    flag = False
+                    for rule in explanations:
+                        if rule.matches_raw_rule(explanation["rule"]["premises"], explanation["rule"]["consequence"]):
+                            flag = True
+                            rejected_count[i] += 1
+                            break
+                    if not flag:
+                        elapsed = time.time() - start_rule_time
+                        explanations.append(rule_wrapper.from_rule(explanation["rule"]["premises"], explanation["rule"]["consequence"], "LORE_SA", rejected_count[i], elapsed, False))
+                        i += 1
+                        start_rule_time = time.time()
+                else:
+                    elapsed = time.time() - start_rule_time
+                    explanations.append(
+                        rule_wrapper.from_rule(explanation["rule"]["premises"], explanation["rule"]["consequence"],
+                                               "LORE_SA", rejected_count[i], elapsed, True))
+                    i += 1
+                    start_rule_time = time.time()
+
             else:
-                explanations.append(rule_wrapper.from_rule(explanation["rule"]["premises"], explanation["rule"]["consequence"], "LORE_SA"))
+                elapsed = time.time() - start_rule_time
+                explanations.append(rule_wrapper.from_rule(explanation["rule"]["premises"], explanation["rule"]["consequence"], "LORE_SA", rejected_count[i], elapsed, False))
+                i += 1
+                start_rule_time = time.time()
+
+            if len(explanations) >= amount:
+                break
             # if self.normalize_rule(explanation["rule"]) not in [self.normalize_rule(entry["rule"]) for entry in explanations]:#
             #     explanations.append(explanation)
         return explanations
