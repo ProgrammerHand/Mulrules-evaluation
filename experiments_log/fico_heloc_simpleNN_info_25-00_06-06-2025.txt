@@ -1,0 +1,69 @@
+Reading fico.csv from ./data/
+Dropped columns:[]
+
+Raw NaN counts per column:
+Series([], dtype: int64)
+Numeric: ['ExternalRiskEstimate', 'MSinceOldestTradeOpen', 'MSinceMostRecentTradeOpen', 'AverageMInFile', 'NumSatisfactoryTrades', 'NumTrades60Ever2DerogPubRec', 'NumTrades90Ever2DerogPubRec', 'PercentTradesNeverDelq', 'MSinceMostRecentDelq', 'NumTotalTrades', 'NumTradesOpeninLast12M', 'PercentInstallTrades', 'MSinceMostRecentInqexcl7days', 'NumInqLast6M', 'NumInqLast6Mexcl7days', 'NetFractionRevolvingBurden', 'NetFractionInstallBurden', 'NumRevolvingTradesWBalance', 'NumInstallTradesWBalance', 'NumBank2NatlTradesWHighUtilization', 'PercentTradesWBalance'] 
+ Categorical: ['MaxDelq2PublicRecLast12M', 'MaxDelqEver'], Continuous: ['ExternalRiskEstimate', 'MSinceOldestTradeOpen', 'MSinceMostRecentTradeOpen', 'AverageMInFile', 'PercentTradesNeverDelq', 'MSinceMostRecentDelq', 'PercentInstallTrades', 'MSinceMostRecentInqexcl7days', 'NetFractionRevolvingBurden', 'NetFractionInstallBurden', 'PercentTradesWBalance']
+Num_strat: mean, Cat_strat: most_frequent
+
+Raw NaN counts per column:
+Series([], dtype: int64)
+Target_map: {'Bad': 0, 'Good': 1}
+Test_size: 0.3, Random_state: 42
+Classifier: simpleNN Parameters: {'input_size': 39}
+
+Test class distribution:
+       Count  Percentage
+class                   
+0       5459       52.19
+1       5000       47.81
+
+Train class distribution:
+       Count  Percentage
+class                   
+Bad     3821       52.19
+Good    3500       47.81
+
+Test class distribution:
+       Count  Percentage
+class                   
+Bad     1638        52.2
+Good    1500        47.8
+Train accuracy: 0.6975822975003415
+Test accuracy: 0.6963033779477374
+
+Classification Report (Train):
+              precision    recall  f1-score   support
+
+         Bad       0.68      0.79      0.73      3821
+        Good       0.72      0.60      0.66      3500
+
+    accuracy                           0.70      7321
+   macro avg       0.70      0.69      0.69      7321
+weighted avg       0.70      0.70      0.69      7321
+
+
+Classification Report (Test):
+              precision    recall  f1-score   support
+
+         Bad       0.68      0.78      0.73      1638
+        Good       0.72      0.60      0.65      1500
+
+    accuracy                           0.70      3138
+   macro avg       0.70      0.69      0.69      3138
+weighted avg       0.70      0.70      0.69      3138
+
+Initializing Anchor Explainer with params: precision_treshold = 0.9, beam_size = 8, feature_names = Index(['ExternalRiskEstimate', 'MSinceOldestTradeOpen',
+       'MSinceMostRecentTradeOpen', 'AverageMInFile', 'NumSatisfactoryTrades',
+       'NumTrades60Ever2DerogPubRec', 'NumTrades90Ever2DerogPubRec',
+       'PercentTradesNeverDelq', 'MSinceMostRecentDelq',
+       'MaxDelq2PublicRecLast12M', 'MaxDelqEver', 'NumTotalTrades',
+       'NumTradesOpeninLast12M', 'PercentInstallTrades',
+       'MSinceMostRecentInqexcl7days', 'NumInqLast6M', 'NumInqLast6Mexcl7days',
+       'NetFractionRevolvingBurden', 'NetFractionInstallBurden',
+       'NumRevolvingTradesWBalance', 'NumInstallTradesWBalance',
+       'NumBank2NatlTradesWHighUtilization', 'PercentTradesWBalance'],
+      dtype='object'), categorical_names = {9: ['-9', '0', '1', '2', '3', '4', '5', '6', '7', '9'], 10: ['-9', '2', '3', '4', '5', '6', '7', '8']}, seed = None, iter_limit = 15
+Initializing LORE Explainer with params: ng_function <function genetic_neighborhood at 0x000001AA1E74F1A0>, discrete_use_probabilities True,continuous_function_estimation False, iter_limit = 15
+Initializing EXPLAN Explainer with config: N_samples=3000, tau=250, iter_limit=15 
