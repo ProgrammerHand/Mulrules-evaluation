@@ -46,11 +46,9 @@ def create_classifier(experiment_name, classifier_name, classifiers_names, class
         # Instantiate the classifier using the lambda function
         classifier = classifiers_names[classifier_name]()
         if classifier_name == "simpleNN":
-            # return classifier(**classifier_parametrs[classifier_name][experiment_name])
-            return classifier(**classifier_parametrs[classifier_name])
+            return classifier(**classifier_parametrs[classifier_name][experiment_name])
         # Set parameters using the classifier's parameters from classifier_parametrs
-        # classifier.set_params(**classifier_parametrs[classifier_name][experiment_name])
-        classifier.set_params(**classifier_parametrs[classifier_name])
+        classifier.set_params(**classifier_parametrs[classifier_name][experiment_name])
         return classifier
     else:
         raise ValueError(f"Classifier '{classifier_name}' not found or missing parameters.")
@@ -91,22 +89,25 @@ def get_predict_functions(dataset, clf, custom_scaler):
 
     return predict_fn, predict_probab_fn, predict_fn_anchor
 
-def get_balanced_correct_indexes(pred_funct, X_test, y_test, n):
-    # predictions
-    y_pred = pred_funct(X_test)
+def get_balanced_correct_indexes(pred_funct, X_test, y_test, n, instance_2e):
 
-    tempX = X_test.reset_index(drop=True)
-    temp = y_test.reset_index(drop=True)
+    # remove choosen indexes
+    X_test_dropped = X_test.drop(instance_2e)
+    y_test_dropped = y_test.drop(instance_2e)
+    positional_indexes_instance_2e = X_test.index.get_indexer(instance_2e).tolist()
+    # predictions
+    y_pred = pred_funct(X_test_dropped)
+
     # correct predictions
-    correct_mask = y_pred == y_test
+    correct_mask = y_pred == y_test_dropped
     correct_indices = np.where(correct_mask)[0]
 
-    classes = np.unique(y_test)
+
     # X_correct = X_test[correct_mask]
     # y_correct = y_test[correct_mask]
 
     # how many samples per class
-    classes = np.unique(y_test)
+    classes = np.unique(y_test_dropped)
     n_per_class = n // len(classes)
 
     selected_indices = []
@@ -124,7 +125,7 @@ def get_balanced_correct_indexes(pred_funct, X_test, y_test, n):
             sampled = np.random.choice(cls_correct_indices, size=n_per_class, replace=False)
             # sampled = np.random.choice(cls_indices, size=n_per_class, replace=False)
 
-        # Map back to original X_test index
+        # map back to original X_test index
         selected_indices.extend(sampled.tolist())
 
-    return selected_indices
+    return positional_indexes_instance_2e + selected_indices
