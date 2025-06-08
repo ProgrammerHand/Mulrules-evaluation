@@ -33,64 +33,80 @@ class SimpleNN(nn.Module):
         # x = self.sigmoid(x)
         return x
 
-    def fit(self,X,y):
-      # Convert data to tensors
-      X_train_tensor = torch.tensor(X, dtype=torch.float32)
-      y_train_tensor = torch.tensor(y.values, dtype=torch.float32).view(-1, 1)
+    def fit(self, X, y):
+        # convert data to tensors
+        X_train_tensor = torch.tensor(X, dtype=torch.float32)
 
-      # Loss and optimizer
-      pos_weight = torch.tensor([(y_train_tensor == 0).sum() / (y_train_tensor == 1).sum()])
-      criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
-      # criterion = nn.BCELoss()
-      optimizer = optim.Adam(self.parameters(), lr=0.0001)
-      scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=20, factor=0.5, verbose=True)
+        y_train_tensor = torch.tensor(
+            y.values if isinstance(y, pd.Series) else y,
+            dtype=torch.float32
+        )
+        if y_train_tensor.ndim == 1:
+            y_train_tensor = y_train_tensor.view(-1, 1)
 
-      best_loss = float('inf')
+        # loss and optimizer
+        pos_weight = torch.tensor(
+            [(y_train_tensor == 0).sum() / (y_train_tensor == 1).sum()],
+            device=X_train_tensor.device
+        )
+        criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
+        optimizer = optim.Adam(self.parameters(), lr=0.0001)
+        scheduler = optim.lr_scheduler.ReduceLROnPlateau(
+            optimizer, patience=20, factor=0.5, verbose=True
+        )
 
-      print(f"First few samples: {X[:5]}")
-      print(f"Target distributions: {np.bincount(y.astype(np.int64))}")
-      epochs = 1000
-      # Training loop
-      for epoch in range(epochs):
-          optimizer.zero_grad()
-          outputs = self(X_train_tensor)
+        best_loss = float('inf')
 
-          if epoch == 0:
-              print(f"Initial outputs: {outputs[:5]}")
-              print(f"Initial targets: {y_train_tensor[:5]}")
+        print(f"First few samples: {X[:5]}")
+        print(f"Target distributions: {np.bincount(y.astype(np.int64))}")
+        epochs = 1000
 
-          loss = criterion(outputs, y_train_tensor)
-          loss.backward()
+        # Training loop
+        for epoch in range(epochs):
+            optimizer.zero_grad()
+            outputs = self(X_train_tensor)
 
-          if epoch % 10 == 0:
-              with torch.no_grad():
-                  grad_norm = sum(p.grad.norm().item() for p in self.parameters() if p.grad is not None)
-                  print(f"Gradient norm: {grad_norm}")
+            if epoch == 0:
+                print(f"Initial outputs: {outputs[:5]}")
+                print(f"Initial targets: {y_train_tensor[:5]}")
 
-                  predictions = (torch.sigmoid(outputs) >= 0.5).int()
-                  accuracy = (predictions == y_train_tensor).float().mean()
-                  print(f"Epoch [{epoch + 1}/{epochs}], Loss: {loss.item():.4f}, Accuracy: {accuracy.item():.4f}")
+            loss = criterion(outputs, y_train_tensor)
+            loss.backward()
 
-          optimizer.step()
-          scheduler.step(loss)
+            if epoch % 10 == 0:
+                with torch.no_grad():
+                    grad_norm = sum(
+                        p.grad.norm().item()
+                        for p in self.parameters()
+                        if p.grad is not None
+                    )
+                    print(f"Gradient norm: {grad_norm}")
+
+                    predictions = (torch.sigmoid(outputs) >= 0.5).int()
+                    accuracy = (predictions == y_train_tensor).float().mean()
+                    print(
+                        f"Epoch [{epoch + 1}/{epochs}], "
+                        f"Loss: {loss.item():.4f}, Accuracy: {accuracy.item():.4f}"
+                    )
+
+            optimizer.step()
+            scheduler.step(loss)
 
     def predict_proba(self, X):
-        # Ensure input is dense (convert if sparse)
-        if hasattr(X, "toarray"):  # This checks if the input is a sparse matrix (like from OneHotEncoder)
-            X = X.toarray()  # Convert sparse matrix to dense
+        # check input is dense (convert if sparse)
+        if hasattr(X, "toarray"):  # checks if the input is a sparse matrix (like from OneHotEncoder)
+            X = X.toarray()  # convert sparse matrix to dense
         X = np.array(X, dtype=np.float32)
-        # Convert to tensor if necessary
+        # convert to tensor
         X_tensor = torch.tensor(X, dtype=torch.float32)
 
-        # Perform the forward pass to get predictions
+        self.eval()
+        # forward pass to get predictions
         with torch.no_grad():
             outputs = self(X_tensor)
-            probabilities = outputs.numpy().flatten()
+            probabilities = torch.sigmoid(outputs).numpy().flatten()
 
-        # Convert to probabilities (binary classification)
-        # probabilities = outputs.numpy()  # Convert to numpy array
-
-        return np.column_stack([1 - probabilities, probabilities])  # For binary classification
+        return np.column_stack([1 - probabilities, probabilities])  # binary classification
 
     def predict(self, X):
         probabilities = self.predict_proba(X)
