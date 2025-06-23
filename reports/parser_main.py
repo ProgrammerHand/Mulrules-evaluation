@@ -50,21 +50,29 @@ def analyze_results(rules_log, entries_log, path = "./experiments_log/", min_cov
         ]
         display(tresholded_rules.drop(columns=["Premises"]).reset_index(drop=True))
     
-    
-        display(Markdown(f"### Rules for Instance {instance_name}, Non-dominated (Cov↑, Pre↑)"))
         non_dominated_rules1 = parser_util.filter_non_dominated(tresholded_rules)
-        display(non_dominated_rules1.drop(columns=["Premises"]).reset_index(drop=True))
-        parser_util.plot_non_dominated_rules(non_dominated_rules1, instance_name)
-        parser_util.plot_rules_comparison(all_rules=df_rules[df_rules['Instance_Name'] == instance_name],
+        if not non_dominated_rules1.empty:
+            ideal_rule_idx, ideal_point = parser_util.ideal_point_rule_2d(non_dominated_rules1)
+        display(Markdown(f"### Rules for Instance {instance_name}, Non-dominated (Cov↑, Pre↑), Ideal (Cov: {ideal_point[0]}, Pre: {ideal_point[1]})"))
+        df_display = non_dominated_rules1.drop(columns=["Premises"]).reset_index(drop=True)
+
+        display(df_display.style.apply(parser_util.highlight_row, highlight_idx=ideal_rule_idx, axis=1))
+        if not non_dominated_rules1.empty:
+            parser_util.plot_non_dominated_rules(non_dominated_rules1, instance_name)
+            parser_util.plot_rules_comparison(all_rules=df_rules[df_rules['Instance_Name'] == instance_name],
                                           filtered_rules=non_dominated_rules1,
                                           instance_name=instance_name)
         agg_df = parser_util.build_attr_usage_df(non_dominated_rules1)
         agg_all_dom1.append(agg_df)
         parser_util.plot_feature_usage_heatmap(agg_df, feature_col="Feature", explainer_col="Explainer", count_col="Count", all_features=attributes, vmax = max_rules)
     
-        display(Markdown(f"### Rules for Instance {instance_name}, Non-dominated (Cov_class↑, Pre↑, Len↓)"))
         non_dominated_rules2 = parser_util.filter_non_dominated_3d(tresholded_rules)
-        display(non_dominated_rules2.drop(columns=["Premises"]).reset_index(drop=True))
+        if not non_dominated_rules2.empty:
+            ideal_rule_idx, ideal_point = parser_util.ideal_point_rule_3d(non_dominated_rules2)
+        display(Markdown(f"### Rules for Instance {instance_name}, Non-dominated (Cov_class↑, Pre↑, Len↓), Ideal (Cov: {ideal_point[0]}, Pre: {ideal_point[1]}, Len: {ideal_point[2]})"))
+        df_display = non_dominated_rules2.drop(columns=["Premises"]).reset_index(drop=True)
+
+        display(df_display.style.apply(parser_util.highlight_row, highlight_idx=ideal_rule_idx, axis=1))
         agg_df = parser_util.build_attr_usage_df(non_dominated_rules2)
         agg_all_dom2.append(agg_df)
         parser_util.plot_feature_usage_heatmap(agg_df, feature_col="Feature", explainer_col="Explainer", count_col="Count", all_features=attributes, vmax = max_rules)

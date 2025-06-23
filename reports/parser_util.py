@@ -4,6 +4,7 @@ from tabulate import tabulate
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+import numpy as np
 from collections import Counter
 
 
@@ -86,15 +87,48 @@ def filter_non_dominated(df, cov_col='Cov', pre_col='Pre'):
         for j, row_j in df.iterrows():
             if i != j:
                 if (row_j[cov_col] >= row_i[cov_col] and
-                        row_j[pre_col] >= row_i[pre_col] and
-                        (row_j[cov_col] > row_i[cov_col] or row_j[pre_col] > row_i[pre_col])):
+                    row_j[pre_col] >= row_i[pre_col] and
+                    (row_j[cov_col] > row_i[cov_col] or row_j[pre_col] > row_i[pre_col])):
                     dominated = True
                     break
         if not dominated:
             non_dominated_indices.append(i)
 
-    return df.loc[non_dominated_indices].reset_index(drop=True)
+    return df.loc[non_dominated_indices].reset_index(drop=True).copy()
 
+def ideal_point_rule_2d(df, col_1='Cov', col_1_prop="gain", col_2='Pre', col_2_prop="gain"):
+    if not df.empty:
+        if col_1_prop == "loss":
+            col_1_ideal = df[col_1].min()
+        else:
+            col_1_ideal = df[col_1].max()
+        if col_2_prop == "loss":
+            col_2_ideal = df[col_2].min()
+        else:
+            col_2_ideal = df[col_2].max()
+            
+        df['Distance_idp_eucl'] = np.sqrt((df[col_1] - col_1_ideal)**2 + (df[col_2] - col_2_ideal)**2)
+        
+        return df['Distance_idp_eucl'].idxmin(), [col_1_ideal,col_2_ideal]
+
+def ideal_point_rule_3d(df, col_1='Cov_class', col_1_prop="gain", col_2='Pre', col_2_prop="gain", col_3='Len', col_3_prop="loss"):
+    if not df.empty:
+        if col_1_prop == "loss":
+            col_1_ideal = df[col_1].min()
+        else:
+            col_1_ideal = df[col_1].max()
+        if col_2_prop == "loss":
+            col_2_ideal = df[col_2].min()
+        else:
+            col_2_ideal = df[col_2].max()
+        if col_3_prop == "loss":
+            col_3_ideal = df[col_2].min()
+        else:
+            col_3_ideal = df[col_2].max()
+            
+        df['Distance_idp_eucl'] = np.sqrt((df[col_1] - col_1_ideal)**2 + (df[col_2] - col_2_ideal)**2 + (df[col_3] - col_3_ideal)**2)
+        # df.loc[df['Distance_idp_eucl'].idxmin()]
+        return df['Distance_idp_eucl'].idxmin(), [col_1_ideal,col_2_ideal,col_3_ideal]
 
 def filter_non_dominated_3d(df, cov_col='Cov_class', pre_col='Pre', len_col='Len'):
     # convert to numpy for speed
@@ -111,26 +145,42 @@ def filter_non_dominated_3d(df, cov_col='Cov_class', pre_col='Pre', len_col='Len
             # for cov_col and pre_col (to maximize): other >= candidate
             # for len_col (to minimize): other <= candidate
             if (other[0] >= candidate[0] and
-                    other[1] >= candidate[1] and
-                    other[2] <= candidate[2] and
-                    (other[0] > candidate[0] or other[1] > candidate[1] or other[2] < candidate[2])):
+                other[1] >= candidate[1] and
+                other[2] <= candidate[2] and
+                (other[0] > candidate[0] or other[1] > candidate[1] or other[2] < candidate[2])):
                 dominated = True
                 break
         non_dominated_mask.append(not dominated)
 
-    return df.loc[non_dominated_mask]
-
-
-def plot_non_dominated_rules(non_dominated_rules, instance_name):
-    plt.figure(figsize=(8, 6))
+    return df.loc[non_dominated_mask].reset_index(drop=True).copy()
+    
+def plot_non_dominated_rules(non_dominated_rules, instance_name, coord_1 = 'Cov', coord_2 = 'Pre'):
+    ideal_rule_idx, ideal_point = ideal_point_rule_2d(non_dominated_rules)
+    ideal_rule = non_dominated_rules.loc[ideal_rule_idx]
+    plt.figure(figsize=(8,6))
     sns.scatterplot(
         data=non_dominated_rules,
-        x='Cov',
-        y='Pre',
+        x= coord_1,
+        y= coord_2,
         hue='Explainer',
         style='Explainer',
         palette='tab10',
         s=100
+    )
+
+    plt.scatter(
+        ideal_point[0], ideal_point[1],
+        color='black',
+        marker='X',
+        s=100,
+        label='Ideal Point'
+    )
+
+    plt.plot(
+        [ideal_point[0], ideal_rule[coord_1]],
+        [ideal_point[1], ideal_rule[coord_2]],
+        'k--',  # black dashed line
+        linewidth=1.5
     )
 
     plt.title(f"Non-dominated Rules for Instance {instance_name} (Coverage ↑, Precision ↑)")
@@ -197,19 +247,20 @@ def plot_feature_usage_heatmap(df: pd.DataFrame,
         print("No data to display or vmax <= 0.")
 
 
-def plot_rules_comparison(all_rules, filtered_rules, instance_name):
-    plt.figure(figsize=(8, 6))
+def plot_rules_comparison(all_rules, filtered_rules, instance_name, coord_1 = 'Cov', coord_2 = 'Pre'):
+    plt.figure(figsize=(8,6))
 
     # palette for explainers across both datasets
     explainers = sorted(all_rules['Explainer'].unique())
     palette = sns.color_palette('tab10', n_colors=len(explainers))
     explainer_palette = dict(zip(explainers, palette))
-
+    ideal_rule_idx, ideal_point = ideal_point_rule_2d(filtered_rules)
+    ideal_rule = filtered_rules.loc[ideal_rule_idx]
     # all rules - circles
     sns.scatterplot(
         data=all_rules,
-        x='Cov',
-        y='Pre',
+        x=coord_1,
+        y=coord_2,
         hue='Explainer',
         palette=explainer_palette,
         s=60,
@@ -220,8 +271,8 @@ def plot_rules_comparison(all_rules, filtered_rules, instance_name):
     # filtered rules - X markers with edgecolors
     sns.scatterplot(
         data=filtered_rules,
-        x='Cov',
-        y='Pre',
+        x=coord_1,
+        y=coord_2,
         hue='Explainer',
         palette=explainer_palette,
         s=120,
@@ -229,9 +280,24 @@ def plot_rules_comparison(all_rules, filtered_rules, instance_name):
         edgecolor='black'
     )
 
+    plt.scatter(
+        ideal_point[0], ideal_point[1],
+        color='black',
+        marker='X',
+        s=100,
+        label='Ideal Point'
+    )
+
+    plt.plot(
+        [ideal_point[0], ideal_rule[coord_1]],
+        [ideal_point[1], ideal_rule[coord_2]],
+        'k--',  # black dashed line
+        linewidth=1.5
+    )
+
     # lines connecting filtered rules sorted by Coverage
-    filtered_sorted = filtered_rules.sort_values(by='Cov')
-    plt.plot(filtered_sorted['Cov'], filtered_sorted['Pre'], color='gray', linestyle='--', linewidth=1)
+    filtered_sorted = filtered_rules.sort_values(by=coord_1)
+    plt.plot(filtered_sorted[coord_1], filtered_sorted[coord_2], color='gray', linestyle='--', linewidth=1)
 
     plt.title(f"Rules for Instance {instance_name} (Coverage ↑, Precision ↑)")
     plt.xlabel("Coverage")
@@ -263,3 +329,6 @@ def summarize_explainer_metrics_with_global_average(explainer_dict):
     df_summary.loc["Global_Average"] = global_df.mean()
 
     return df_summary
+
+def highlight_row(s, highlight_idx):
+    return ['font-weight: bold' if s.name == highlight_idx else '' for _ in s]
