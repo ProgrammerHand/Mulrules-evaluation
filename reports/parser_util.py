@@ -31,6 +31,13 @@ def load_entries_to_df(file_path):
     return df
 
 
+def is_numeric_string(s):
+    try:
+        float(s)
+        return True
+    except ValueError:
+        return False
+
 def load_and_group_rules(file_path):
     grouped_rules = defaultdict(lambda: defaultdict(list))
 
@@ -39,7 +46,9 @@ def load_and_group_rules(file_path):
             data = json.loads(line)
             if data.get("type") == "rule":
                 premises = data["rule"]["premises"]
-                premises_str = " AND ".join(f'{p["attr"]} {p["op"]} {p["val"]}' for p in premises)
+                premises_str = " AND ".join(
+                    f'{p["attr"]} {p["op"]} {round(float(p["val"]), 4) if is_numeric_string(p["val"]) else p["val"]}' 
+                    for p in premises)
                 consequence = data["rule"]["consequence"]
                 consequence_str = f'{consequence["attr"]} {consequence["op"]} {consequence["val"]}'
                 rule_str = f'IF {premises_str} THEN {consequence_str}'
@@ -109,7 +118,7 @@ def ideal_point_rule_2d(df, col_1='Cov', col_1_prop="gain", col_2='Pre', col_2_p
             
         df['Distance_idp_eucl'] = np.sqrt((df[col_1] - col_1_ideal)**2 + (df[col_2] - col_2_ideal)**2)
         
-        return df['Distance_idp_eucl'].idxmin(), [col_1_ideal,col_2_ideal]
+        return df.loc[df['Distance_idp_eucl'].idxmin()]["Rule_ID"], [col_1_ideal,col_2_ideal]
 
 def ideal_point_rule_3d(df, col_1='Cov_class', col_1_prop="gain", col_2='Pre', col_2_prop="gain", col_3='Len', col_3_prop="loss"):
     if not df.empty:
@@ -128,7 +137,7 @@ def ideal_point_rule_3d(df, col_1='Cov_class', col_1_prop="gain", col_2='Pre', c
             
         df['Distance_idp_eucl'] = np.sqrt((df[col_1] - col_1_ideal)**2 + (df[col_2] - col_2_ideal)**2 + (df[col_3] - col_3_ideal)**2)
         # df.loc[df['Distance_idp_eucl'].idxmin()]
-        return df['Distance_idp_eucl'].idxmin(), [col_1_ideal,col_2_ideal,col_3_ideal]
+        return df.loc[df['Distance_idp_eucl'].idxmin()]["Rule_ID"], [col_1_ideal,col_2_ideal,col_3_ideal]
 
 def filter_non_dominated_3d(df, cov_col='Cov_class', pre_col='Pre', len_col='Len'):
     # convert to numpy for speed
@@ -153,9 +162,37 @@ def filter_non_dominated_3d(df, cov_col='Cov_class', pre_col='Pre', len_col='Len
         non_dominated_mask.append(not dominated)
 
     return df.loc[non_dominated_mask].reset_index(drop=True).copy()
+
+def filter_duplicates_supersets(df):
+    df_copy = df.copy()
+    rows_drop = set()  # use a set to avoid duplicate entries
+    for i, row_i in df.iterrows():
+        if i in rows_drop:
+            continue  # skip already marked rows
+
+        attrs1 = {p["attr"] for p in row_i["Premises"]}
+
+        for j, row_j in df.iterrows():
+            if i == j or j in rows_drop:
+                continue
+
+            attrs2 = {p["attr"] for p in row_j["Premises"]}
+
+            if (
+                attrs1 == attrs2
+                #or attrs1.issubset(attrs2)
+                #or attrs2.issubset(attrs1)
+            ):
+                if row_i["Distance_idp_eucl"] < row_j["Distance_idp_eucl"] or row_i["Distance_idp_eucl"] == row_j["Distance_idp_eucl"]:
+                    rows_drop.add(j)
+                else:
+                    rows_drop.add(i)
+                    break  # skip further comparisons for this row
+
+    return df_copy.drop(rows_drop)
+                        
     
-def plot_non_dominated_rules(non_dominated_rules, instance_name, coord_1 = 'Cov', coord_2 = 'Pre'):
-    ideal_rule_idx, ideal_point = ideal_point_rule_2d(non_dominated_rules)
+def plot_non_dominated_rules(non_dominated_rules, instance_name, ideal_rule_idx, ideal_point, coord_1 = 'Cov', coord_2 = 'Pre'):
     ideal_rule = non_dominated_rules.loc[ideal_rule_idx]
     plt.figure(figsize=(8,6))
     sns.scatterplot(
@@ -247,14 +284,13 @@ def plot_feature_usage_heatmap(df: pd.DataFrame,
         print("No data to display or vmax <= 0.")
 
 
-def plot_rules_comparison(all_rules, filtered_rules, instance_name, coord_1 = 'Cov', coord_2 = 'Pre'):
+def plot_rules_comparison(all_rules, filtered_rules, instance_name, ideal_rule_idx, ideal_point, coord_1 = 'Cov', coord_2 = 'Pre'):
     plt.figure(figsize=(8,6))
 
     # palette for explainers across both datasets
     explainers = sorted(all_rules['Explainer'].unique())
     palette = sns.color_palette('tab10', n_colors=len(explainers))
     explainer_palette = dict(zip(explainers, palette))
-    ideal_rule_idx, ideal_point = ideal_point_rule_2d(filtered_rules)
     ideal_rule = filtered_rules.loc[ideal_rule_idx]
     # all rules - circles
     sns.scatterplot(
@@ -309,6 +345,9 @@ def plot_rules_comparison(all_rules, filtered_rules, instance_name, coord_1 = 'C
 
     plt.legend(by_label.values(), by_label.keys(), title='Explainer', bbox_to_anchor=(1.05, 1), loc='upper left')
 
+    plt.xlim(0, 1.1)
+    plt.ylim(0, 1.1)
+    
     plt.grid(True)
     plt.tight_layout()
     plt.show()
@@ -332,3 +371,13 @@ def summarize_explainer_metrics_with_global_average(explainer_dict):
 
 def highlight_row(s, highlight_idx):
     return ['font-weight: bold' if s.name == highlight_idx else '' for _ in s]
+
+def round_cols(df, cols_names, decimal_places=5):
+    df_copy = df.copy()
+
+    for col in cols_names:
+        if col in df_copy.columns:
+            df_copy[col] = pd.to_numeric(df_copy[col], errors='coerce')
+    
+    format_dict = {col: f"{{:.{decimal_places}f}}" for col in cols_names}
+    return df_copy.style.format(format_dict)

@@ -113,7 +113,7 @@ def get_balanced_correct_indexes(pred_funct, X_test, y_test, n, instance_2e):
     selected_indices = []
 
     for cls in classes:
-        # indices where the true class is cls and prediction is correct
+        # indices where true class is cls and prediction is correct
         # cls_indices = np.where((y_correct == cls))[0]
         cls_correct_indices = np.where((y_test == cls) & correct_mask)[0]
 

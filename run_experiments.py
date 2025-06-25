@@ -61,9 +61,9 @@ dataset_names: Dict[str, str] = {
 }
 
 instance_2e: Dict[str, List[int]] = {
-    "adult": [5988, 18073, 652, 2711, 12758, 5759, 20, 1808, 12191, 3374],
-    "german": [844, 480, 11, 917, 523, 296, 301, 915, 941, 216],
-    "fico_heloc": [1758, 2674, 8352, 9583, 8530, 9264, 781, 5633, 6983, 779]
+    "adult": [5988, 18073, 652, 2711, 12758, 5759, 20, 1808, 12191, 3374, 654, 8299, 28053, 30484, 7549, 22983, 5226, 6303, 13423, 26511],
+    "german": [844, 480, 11, 917, 523, 296, 301, 915, 941, 216, 477, 435, 715, 85, 856, 155, 332, 817, 379, 858],
+    "fico_heloc": [1758, 2674, 8352, 9583, 8530, 9264, 781, 5633, 6983, 779, 7025, 9217, 3332, 8639, 8724, 1474, 1621, 7299, 3765, 7168]
 }
 
 drop_cols_names_datasets: Dict[str, List[str] | None] = {
@@ -145,8 +145,8 @@ continuous_cols_names_datasets: Dict[str, List[str]] = {
 
 random_state = 42
 classifiers_names = {
-    # "random_forest": lambda: RandomForestClassifier(),
-    "simpleNN": lambda: SimpleNN,
+    "random_forest": lambda: RandomForestClassifier(),
+    # "simpleNN": lambda: SimpleNN,
     # "tab_pfn": lambda: TabPFNClassifier()
 }
 
