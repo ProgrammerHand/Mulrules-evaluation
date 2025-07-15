@@ -1,6 +1,6 @@
 from collections import defaultdict
-
 import pandas as pd
+import seaborn as sns
 from IPython.display import display, Markdown
 import parser_util
 
@@ -8,6 +8,11 @@ def analyze_results(rules_log, entries_log, path = "./experiments_log/", min_cov
     rules_grouped = parser_util.load_and_group_rules(path + rules_log)
     df_instances = parser_util.load_entries_to_df(path + entries_log)
     df_rules = parser_util.grouped_rules_to_df(rules_grouped)
+
+    explainers = sorted(df_rules['Explainer'].unique())
+    palette = sns.color_palette('tab10', n_colors=len(explainers))
+    explainer_palette = dict(zip(explainers, palette))
+
     instance_names = df_rules['Instance_Name'].unique()
     filtered_counts = defaultdict(list)
     non_dom1_by_explainer = defaultdict(list)
@@ -67,7 +72,7 @@ def analyze_results(rules_log, entries_log, path = "./experiments_log/", min_cov
         display(parser_util.round_cols(df_display, round_cols_names).apply(parser_util.highlight_row, highlight_idx=ideal_rule_idx, axis=1))
         if not non_dominated_rules1.empty:
             parser_util.plot_rules_comparison(all_rules=df_rules[df_rules['Instance_Name'] == instance_name],
-                                          filtered_rules=non_dominated_rules1,
+                                          filtered_rules=non_dominated_rules1, explainer_palette=explainer_palette,
                                           instance_name=instance_name, ideal_rule_idx=ideal_rule_idx, ideal_point=ideal_point)
 
         non_dominated_rules1_unique = parser_util.filter_duplicates_supersets(non_dominated_rules1)
@@ -79,9 +84,9 @@ def analyze_results(rules_log, entries_log, path = "./experiments_log/", min_cov
 
         
         if not non_dominated_rules1_unique.empty:
-            parser_util.plot_non_dominated_rules(non_dominated_rules1_unique, instance_name, ideal_rule_idx, ideal_point)
+            parser_util.plot_non_dominated_rules(non_dominated_rules1_unique, explainer_palette, instance_name, ideal_rule_idx, ideal_point)
             parser_util.plot_rules_comparison(all_rules=df_rules[df_rules['Instance_Name'] == instance_name],
-                                          filtered_rules=non_dominated_rules1_unique,
+                                          filtered_rules=non_dominated_rules1_unique, explainer_palette=explainer_palette,
                                           instance_name=instance_name, ideal_rule_idx=ideal_rule_idx, ideal_point=ideal_point)
         agg_df = parser_util.build_attr_usage_df(non_dominated_rules1_unique)
         agg_all_dom1.append(agg_df)
@@ -99,7 +104,7 @@ def analyze_results(rules_log, entries_log, path = "./experiments_log/", min_cov
         non_dominated_rules2_unique = parser_util.filter_duplicates_supersets(non_dominated_rules2)
         if not non_dominated_rules2_unique.empty:
             ideal_rule_idx = non_dominated_rules2[non_dominated_rules2["Rule_ID"] == ideal_rule_id].index[0]
-        display(Markdown(f"### Rules for Instance {instance_name}, Non-dominated (Cov_class↑, Pre↑, Len↓), Ideal (Cov: {ideal_point[0]}, Pre: {ideal_point[1]}), Unique rules (diffrent features)"))
+        display(Markdown(f"### Rules for Instance {instance_name}, Non-dominated (Cov_class↑, Pre↑, Len↓), Ideal (Cov: {ideal_point[0]}, Pre: {ideal_point[1]}, Len: {ideal_point[2]}), Unique rules (diffrent features)"))
         df_display = non_dominated_rules2_unique.drop(columns=["Premises"])
         display(parser_util.round_cols(df_display, round_cols_names).apply(parser_util.highlight_row, highlight_idx=ideal_rule_idx, axis=1))
         
@@ -135,9 +140,8 @@ def analyze_results(rules_log, entries_log, path = "./experiments_log/", min_cov
         compute_explainer_diff(correct_pred_rules, tresholded_rules, 'Threshold Filter')
         compute_explainer_diff(tresholded_rules, non_dominated_rules1, 'Non-dominated 1')
         compute_explainer_diff(tresholded_rules, non_dominated_rules2, 'Non-dominated 2')
-        compute_explainer_diff(tresholded_rules, non_dominated_rules1_unique, 'Unique Non-dominated 1')
-        compute_explainer_diff(tresholded_rules, non_dominated_rules2_unique, 'Unique Non-dominated 2')
-        
+        compute_explainer_diff(non_dominated_rules1, non_dominated_rules1_unique, 'Unique Non-dominated 1')
+        compute_explainer_diff(non_dominated_rules2, non_dominated_rules2_unique, 'Unique Non-dominated 2')
         # original_rules_instance = df_rules[df_rules['Instance_Name'] == instance_name]
         # orig_counts = original_rules_instance['Explainer'].value_counts()
         # correct_pred_counts = correct_pred_rules['Explainer'].value_counts()
@@ -179,10 +183,16 @@ def analyze_results(rules_log, entries_log, path = "./experiments_log/", min_cov
     # per-explainer average per stage
     step_avg_dfs = {}
     for step, explainer_dict in filtered_counts_by_explainer.items():
-        df = pd.DataFrame({expl: pd.Series(counts) for expl, counts in explainer_dict.items()})
-        step_avg_dfs[step] = df.mean().rename(step)  # series with index=explainer, values=avg filtered
+        formatted_values = {}
+        for expl, counts in explainer_dict.items():
+            s = pd.Series(counts)
+            total = s.sum()
+            count = s.count()
+            mean = s.mean()
+            formatted_values[expl] = f"{mean:.2f} ({int(total)}/{count})"
+        step_avg_dfs[step] = pd.Series(formatted_values, name=step)  # series with index=explainer, values=avg filtered; sum(each entry,each stage)/entries_amount
     
-    combined_df = pd.concat(step_avg_dfs.values(), axis=1).fillna(0)
+    combined_df = pd.concat(step_avg_dfs.values(), axis=1).fillna("0.00 (0/0)")
     combined_df.index.name = 'Explainer'
     combined_df.columns = [f"Avg Filtered ({col})" for col in combined_df.columns]
     
@@ -196,7 +206,11 @@ def analyze_results(rules_log, entries_log, path = "./experiments_log/", min_cov
     }
     new_row = {}
     for step, col_name in mapping.items():
-        new_row[col_name] = filtration_summary.loc[step, 'Avg Filtered']
+        values = filtered_counts.get(step, [])
+        total = sum(values)
+        count = len(values)
+        mean = total / count if count > 0 else 0
+        new_row[col_name] = f"{mean:.2f} ({total}/{count})"
     
     combined_df.loc['Overall Average'] = pd.Series(new_row)
     display(combined_df)

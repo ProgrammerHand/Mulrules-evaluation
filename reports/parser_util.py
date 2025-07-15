@@ -38,7 +38,7 @@ def is_numeric_string(s):
     except ValueError:
         return False
 
-def load_and_group_rules(file_path):
+def load_and_group_rules (file_path):
     grouped_rules = defaultdict(lambda: defaultdict(list))
 
     with open(file_path, "r") as f:
@@ -131,9 +131,9 @@ def ideal_point_rule_3d(df, col_1='Cov_class', col_1_prop="gain", col_2='Pre', c
         else:
             col_2_ideal = df[col_2].max()
         if col_3_prop == "loss":
-            col_3_ideal = df[col_2].min()
+            col_3_ideal = df[col_3].min()
         else:
-            col_3_ideal = df[col_2].max()
+            col_3_ideal = df[col_3].max()
             
         df['Distance_idp_eucl'] = np.sqrt((df[col_1] - col_1_ideal)**2 + (df[col_2] - col_2_ideal)**2 + (df[col_3] - col_3_ideal)**2)
         # df.loc[df['Distance_idp_eucl'].idxmin()]
@@ -165,7 +165,7 @@ def filter_non_dominated_3d(df, cov_col='Cov_class', pre_col='Pre', len_col='Len
 
 def filter_duplicates_supersets(df):
     df_copy = df.copy()
-    rows_drop = set()  # use a set to avoid duplicate entries
+    rows_drop = set()  # set to avoid duplicate entries
     for i, row_i in df.iterrows():
         if i in rows_drop:
             continue  # skip already marked rows
@@ -190,45 +190,7 @@ def filter_duplicates_supersets(df):
                     break  # skip further comparisons for this row
 
     return df_copy.drop(rows_drop)
-                        
-    
-def plot_non_dominated_rules(non_dominated_rules, instance_name, ideal_rule_idx, ideal_point, coord_1 = 'Cov', coord_2 = 'Pre'):
-    ideal_rule = non_dominated_rules.loc[ideal_rule_idx]
-    plt.figure(figsize=(8,6))
-    sns.scatterplot(
-        data=non_dominated_rules,
-        x= coord_1,
-        y= coord_2,
-        hue='Explainer',
-        style='Explainer',
-        palette='tab10',
-        s=100
-    )
-
-    plt.scatter(
-        ideal_point[0], ideal_point[1],
-        color='black',
-        marker='X',
-        s=100,
-        label='Ideal Point'
-    )
-
-    plt.plot(
-        [ideal_point[0], ideal_rule[coord_1]],
-        [ideal_point[1], ideal_rule[coord_2]],
-        'k--',  # black dashed line
-        linewidth=1.5
-    )
-
-    plt.title(f"Non-dominated Rules for Instance {instance_name} (Coverage ↑, Precision ↑)")
-    plt.xlabel("Coverage")
-    plt.ylabel("Precision")
-    plt.legend(title='Explainer', bbox_to_anchor=(1.05, 1), loc='upper left')
-    plt.grid(True)
-    plt.tight_layout()
-    plt.show()
-
-
+                            
 def count_unique_attributes_from_rules(df_rules):
     attr_counter = Counter()
 
@@ -284,7 +246,47 @@ def plot_feature_usage_heatmap(df: pd.DataFrame,
         print("No data to display or vmax <= 0.")
 
 
-def plot_rules_comparison(all_rules, filtered_rules, instance_name, ideal_rule_idx, ideal_point, coord_1 = 'Cov', coord_2 = 'Pre'):
+def plot_non_dominated_rules(non_dominated_rules, explainer_palette, instance_name, ideal_rule_idx, ideal_point, coord_1 = 'Cov', coord_2 = 'Pre'):
+    
+    ideal_rule = non_dominated_rules.loc[ideal_rule_idx]
+    plt.figure(figsize=(8,6))
+    
+    sns.scatterplot(
+        data=non_dominated_rules,
+        x= coord_1,
+        y= coord_2,
+        hue='Explainer',
+        palette=explainer_palette,
+        s=100,
+        marker='X',
+        edgecolor='black'
+    )
+
+    plt.scatter(
+        ideal_point[0], ideal_point[1],
+        color='black',
+        marker='X',
+        s=100,
+        label='Ideal Point'
+    )
+
+    plt.plot(
+        [ideal_point[0], ideal_rule[coord_1]],
+        [ideal_point[1], ideal_rule[coord_2]],
+        'k--',  # black dashed line
+        linewidth=1.5
+    )
+
+    plt.title(f"Non-dominated Rules for Instance {instance_name} (Coverage ↑, Precision ↑)")
+    plt.xlabel("Coverage")
+    plt.ylabel("Precision")
+    plt.legend(title='Explainer', bbox_to_anchor=(1.05, 1), loc='upper left')
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_rules_comparison(all_rules, filtered_rules, explainer_palette, instance_name, ideal_rule_idx, ideal_point, coord_1 = 'Cov', coord_2 = 'Pre'):
     plt.figure(figsize=(8,6))
 
     # palette for explainers across both datasets
@@ -359,13 +361,13 @@ def summarize_explainer_metrics_with_global_average(explainer_dict):
 
     for explainer, metrics_list in explainer_dict.items():
         df = pd.DataFrame(metrics_list)
-        summary[explainer] = df.mean()
+        summary[f"{explainer}({len(df)})"] = df.mean()
         all_rows.append(df)
 
     df_summary = pd.DataFrame(summary).T
 
     global_df = pd.concat(all_rows, ignore_index=True)
-    df_summary.loc["Global_Average"] = global_df.mean()
+    df_summary.loc[f"Global_Average({len(global_df)})"] = global_df.mean()
 
     return df_summary
 
