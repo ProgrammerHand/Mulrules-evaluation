@@ -8,7 +8,7 @@ import numpy as np
 from collections import Counter
 
 
-def load_entries_to_df(file_path):
+def load_entries_to_df (file_path):
     entries = []
     with open(file_path, "r") as f:
         for line in f:

@@ -4,7 +4,7 @@ import seaborn as sns
 from IPython.display import display, Markdown
 import parser_util
 
-def analyze_results(rules_log, entries_log, path = "./experiments_log/", min_cov = 0.1, min_cov_class = 0.1, min_pre = 0.1):
+def analyze_results (rules_log, entries_log, path = "./experiments_log/", min_cov = 0.1, min_cov_class = 0.1, min_pre = 0.1):
     rules_grouped = parser_util.load_and_group_rules(path + rules_log)
     df_instances = parser_util.load_entries_to_df(path + entries_log)
     df_rules = parser_util.grouped_rules_to_df(rules_grouped)
@@ -41,7 +41,7 @@ def analyze_results(rules_log, entries_log, path = "./experiments_log/", min_cov
         display(instance.drop(columns=['Instance_Name', 'Original_Outcome', 'Predicted_Outcome']).T.rename(columns={df_instances[df_instances['Instance_Name'] == instance_name].index[0]: 'Value'}))
         
         display(Markdown(f"### Rules for Instance {instance_name}"))
-        round_cols_names = ["Cov", "Cov_class", "Pre", "Elapsed_time"]
+        round_cols_names = ["Cov", "Cov_class", "Pre", "Elapsed_time", "Len"]
         display(parser_util.round_cols(df_rules[df_rules['Instance_Name'] == instance_name].drop(columns=["Premises"]).reset_index(drop=True), round_cols_names))
        
         display(Markdown(f"### Rules for Instance {instance_name}, Correct Prediction"))
@@ -62,6 +62,7 @@ def analyze_results(rules_log, entries_log, path = "./experiments_log/", min_cov
         display(parser_util.round_cols(tresholded_rules.drop(columns=["Premises"]).reset_index(drop=True), round_cols_names))
     
         non_dominated_rules1 = parser_util.filter_non_dominated(tresholded_rules)
+        non_dominated_rules1['Len'] = (non_dominated_rules1['Len'] - 0) / (non_dominated_rules1['Len'].max() - 0) # normilize len using minmax
         ideal_point = [0,0]
         if not non_dominated_rules1.empty:
             ideal_rule_id, ideal_point = parser_util.ideal_point_rule_2d(non_dominated_rules1)
@@ -94,17 +95,18 @@ def analyze_results(rules_log, entries_log, path = "./experiments_log/", min_cov
     
         non_dominated_rules2 = parser_util.filter_non_dominated_3d(tresholded_rules)
         ideal_point = [0,0,0]
+        non_dominated_rules2['Len'] = (non_dominated_rules2['Len'] - 0) / (non_dominated_rules2['Len'].max() - 0) # normilize len using minmax
         if not non_dominated_rules2.empty:
             ideal_rule_id, ideal_point = parser_util.ideal_point_rule_3d(non_dominated_rules2)
             ideal_rule_idx = non_dominated_rules2[non_dominated_rules2["Rule_ID"] == ideal_rule_id].index[0]
-        display(Markdown(f"### Rules for Instance {instance_name}, Non-dominated (Cov_class↑, Pre↑, Len↓), Ideal (Cov: {ideal_point[0]}, Pre: {ideal_point[1]}, Len: {ideal_point[2]})"))
+        display(Markdown(f"### Rules for Instance {instance_name}, Non-dominated (Cov_class↑, Pre↑, Len↓), Ideal (Cov class: {ideal_point[0]}, Pre: {ideal_point[1]}, Len: {round(ideal_point[2], 5)})"))
         df_display = non_dominated_rules2.drop(columns=["Premises"]).reset_index(drop=True)
         display(parser_util.round_cols(df_display, round_cols_names).apply(parser_util.highlight_row, highlight_idx=ideal_rule_idx, axis=1))
 
         non_dominated_rules2_unique = parser_util.filter_duplicates_supersets(non_dominated_rules2)
         if not non_dominated_rules2_unique.empty:
             ideal_rule_idx = non_dominated_rules2[non_dominated_rules2["Rule_ID"] == ideal_rule_id].index[0]
-        display(Markdown(f"### Rules for Instance {instance_name}, Non-dominated (Cov_class↑, Pre↑, Len↓), Ideal (Cov: {ideal_point[0]}, Pre: {ideal_point[1]}, Len: {ideal_point[2]}), Unique rules (diffrent features)"))
+        display(Markdown(f"### Rules for Instance {instance_name}, Non-dominated (Cov_class↑, Pre↑, Len↓), Ideal (Cov class: {ideal_point[0]}, Pre: {ideal_point[1]}, Len: {round(ideal_point[2], 5)}, Unique rules (diffrent features)"))
         df_display = non_dominated_rules2_unique.drop(columns=["Premises"])
         display(parser_util.round_cols(df_display, round_cols_names).apply(parser_util.highlight_row, highlight_idx=ideal_rule_idx, axis=1))
         
