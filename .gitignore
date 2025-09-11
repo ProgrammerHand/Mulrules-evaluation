@@ -1,0 +1,3 @@
+# Temporary and binary files
+*/.ipynb_checkpoints/*
+__pycache__/*
