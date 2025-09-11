@@ -6,8 +6,8 @@ import parser_util
 
 def analyze_results(rules_log, entries_log, path = "./experiments_log/", min_cov = 0.1, min_cov_class = 0.1, min_pre = 0.1):
     rules_grouped = parser_util.load_and_group_rules(path + rules_log)
-    df_instances = parser_util.load_entries_to_df(path + entries_log)
-    df_rules = parser_util.grouped_rules_to_df(rules_grouped)
+    df_instances = parser_util.load_entries_to_df(path + entries_log).sort_values(by='Instance_Name')
+    df_rules = parser_util.grouped_rules_to_df(rules_grouped).sort_values(by='Instance_Name')
 
     explainers = sorted(df_rules['Explainer'].unique())
     palette = sns.color_palette('tab10', n_colors=len(explainers))
