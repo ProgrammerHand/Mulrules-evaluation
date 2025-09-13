@@ -39,7 +39,6 @@ class explan_object:
         self.tau = None
 
     def prepare_dataset(self, categorical_cols, target_encoder):
-        # Features Categorization
         columns = self.raw.columns
         possible_outcomes = list(self.raw[self.target_name].squeeze().unique())
 
@@ -85,7 +84,7 @@ class explan_object:
         self.iter_limit = iter_limit
         return f"Initializing EXPLAN Explainer with config: N_samples={self.N_samples}, tau={self.tau}, iter_limit={self.iter_limit} "
 
-    def explain(self, amount, idx, predict_fn_anchor):
+    def explain(self, amount, idx, predict_fn_anchor, instance_name):
         instance2explain = np.array(self.X_test.iloc[idx])
         explanations = []
         infos = []
@@ -94,7 +93,7 @@ class explan_object:
         start_rule_time = time.time()
         # while len(explanations) < amount:
         for n in range(self.iter_limit):
-            print(n)
+            print(f"EXPLAN {n}")
             explanation, info = explan.Explainer(instance2explain,
                                                        predict_fn_anchor,
                                                        self.dataset,
@@ -110,27 +109,23 @@ class explan_object:
                             break
                     if not flag:
                         elapsed = time.time() - start_rule_time
-                        explanations.append(rule_wrapper.from_rule(explanation[1], explanation[0], "EXPLAN", rejected_count[i], elapsed, False, self.numeric_cols_names))
+                        explanations.append(rule_wrapper.from_rule(instance_name, explanation[1], explanation[0], "EXPLAN", rejected_count[i], elapsed, False, self.numeric_cols_names))
                         i += 1
                         start_rule_time = time.time()
                 else:
                     elapsed = time.time() - start_rule_time
                     explanations.append(
-                        rule_wrapper.from_rule(explanation[1], explanation[0], "EXPLAN", rejected_count[i], elapsed, True, self.numeric_cols_names))
+                        rule_wrapper.from_rule(instance_name, explanation[1], explanation[0], "EXPLAN", rejected_count[i], elapsed, True, self.numeric_cols_names))
                     i += 1
                     start_rule_time = time.time()
 
             else:
                 elapsed = time.time() - start_rule_time
-                explanations.append(rule_wrapper.from_rule(explanation[1], explanation[0], "EXPLAN", rejected_count[i], elapsed, False, self.numeric_cols_names))
+                explanations.append(rule_wrapper.from_rule(instance_name, explanation[1], explanation[0], "EXPLAN", rejected_count[i], elapsed, False, self.numeric_cols_names))
                 i += 1
                 start_rule_time = time.time()
-            # if all(old_exp != explanation for old_exp in explanations):
-            #     explanations.append(explanation)
-            #     infos.append(info)
             if len(explanations) >= amount:
                 break
-        # return explanations, infos
         return explanations
 
     def print_explanation(self, explanation, information):

@@ -4,34 +4,6 @@ from Rule_wrapper import rule_wrapper
 from alibi.explainers import AnchorTabular
 from collections import Counter
 import time
-from logger import log_with_custom_tag
-import dataset_manager_legacy
-from sklearn.ensemble import AdaBoostClassifier, RandomForestClassifier
-from sklearn.metrics import accuracy_score
-
-# dataset = dataset.dataset("adult")
-# dataset.label_encoding()
-# dataset.split_dataset(use_labeled = True)
-# dataset.init_preprocessor()
-#
-# clf = RandomForestClassifier(max_depth=20, n_estimators=50, random_state=42)
-# clf.fit(dataset.preprocessor.transform(dataset.X_train), dataset.y_train)
-#
-# predict_fn = lambda x: clf.predict(dataset.preprocessor.transform(x))
-# print('Train accuracy: ', accuracy_score(dataset.y_train, predict_fn(dataset.X_train)))
-# print('Test accuracy: ', accuracy_score(dataset.y_test, predict_fn(dataset.X_test)))
-#
-# explainer = AnchorTabular(predict_fn, dataset.feature_names, categorical_names=dataset.category_map, seed=1)
-# explainer.fit(dataset.X_train)
-#
-# idx = 0
-# inst = dataset.X_test[idx]
-#
-# print(f"Prediction: {dataset.target_names[explainer.predictor(inst.reshape(1, -1))[0]]}, Correct: {dataset.target_names[dataset.y_test[dataset.y_test.index[idx]]]}")
-# explanation = explainer.explain(inst)
-# print('Anchor: IF %s' % (' AND '.join(explanation.anchor) + f' THEN {dataset.target_names[explainer.predictor(inst.reshape(1, -1))[0]]}'))
-# print('Precision: %.2f' % explanation.precision)
-# print('Coverage: %.2f' % explanation.coverage)
 
 class anchor_object:
     def __init__(self,X_train, y_train, X_test, y_test, feature_names, category_map, target_names, continuous_col_name, numeric_cols_names):

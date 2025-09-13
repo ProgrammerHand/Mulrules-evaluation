@@ -10,7 +10,7 @@ class CustomScaler(BaseEstimator, TransformerMixin):
         self.col_index_to_name = {idx: name for idx, name in zip(self.continuous_cols, self.continuous_col_names)}
 
     def fit(self, X, y=None):
-        return self  # No fitting needed here if already fitted outside
+        return self
 
     def transform(self, X):
         return self._apply_scalers(X, method='transform')

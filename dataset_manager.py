@@ -33,6 +33,8 @@ class dataset_object:
         self.X_test = None
         self.y_train = None
         self.y_test = None
+        self.X_val = None
+        self.y_val = None
 
     def read_file(self, dataset_name: str, drop_cols_datasets = None, directory: str = './data/') -> str:
         _, _, stats_filenames = os.walk(directory).__next__()
@@ -45,11 +47,9 @@ class dataset_object:
                         self.raw = pd.read_csv(file, skipinitialspace=True, na_values='?').drop(columns=drop_cols_datasets)
                     else:
                         self.raw = pd.read_csv(file, skipinitialspace=True, na_values='?')
-                    # self.raw.iloc[:, -1] = self.raw .iloc[:, -1].astype('object')
                     self.data = self.raw.iloc[:,:-1]
                     self.feature_names = self.raw.iloc[:, :-1].columns
                     return f"Reading {stat_filename} from {directory}"
-                    # return pd.read_csv(file, skipinitialspace=True, na_values='?', keep_default_na=True)
         return "File not found"
 
     def read_split_files(self, dataset_name: str, drop_cols_datasets=None, directory: str = './data/') -> str:
@@ -101,19 +101,17 @@ class dataset_object:
         return f"Num_strat: {num_strat}, Cat_strat: {cat_strat}"
 
     def target_ordinal_encode(self) -> str:
-
         self.target_encoder = LabelEncoder()
-        self.target_encoder.fit(self.raw.iloc[:, -1].squeeze())
-        self.target_names = self.raw.iloc[:, -1].squeeze().unique()
-        self.target_map = {name: idx for idx, name in enumerate(self.target_names)}
-        self.target = self.raw.iloc[:, -1].squeeze().map(self.target_map)
-        self.reverse_target_map = {v: k for k, v in self.target_map.items()}
-        return f"Target_map: {self.target_map}"
+        col = self.raw.iloc[:, -1].squeeze()
 
-        # self.target_names = self.target_encoder.classes_  # Ordered list of labels
-        # self.target_map = {name: idx for idx, name in enumerate(self.target_names)}
-        # self.reverse_target_map = {idx: name for idx, name in enumerate(self.target_names)}
-        # return f"Target_map: {self.target_map}"
+        self.target_encoder.fit(col)
+        self.target_names = self.target_encoder.classes_
+
+        self.target_map = {label: idx for idx, label in enumerate(self.target_names)}
+        self.target = col.map(self.target_map)  # remains a Series
+        self.reverse_target_map = {v: k for k, v in self.target_map.items()}
+
+        return f"Target_map: {self.target_map}"
 
 
     def init_encoders(self):
@@ -128,11 +126,17 @@ class dataset_object:
             remainder='passthrough'
         ).fit(self.data)
 
-        # self.label_encoders = {col: LabelEncoder().fit(self.data[col]) for col in self.categorical_col_names}
         self.label_encoders = {col: LabelEncoder().fit(self.data.iloc[:, col]) for col in self.categorical_cols}
 
     def split_dataset(self, test_size=0.3, random_state=42):
-        self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(self.data, self.target, test_size=0.3, random_state=42, stratify=self.target)
+        X_train_temp, self.X_test, y_train_temp, self.y_test = train_test_split(self.data, self.target, test_size=0.3, random_state=random_state, stratify=self.target)
+
+        self.X_train, self.X_val, self.y_train, self.y_val = train_test_split(
+            X_train_temp, y_train_temp,
+            test_size=0.3,
+            random_state=random_state,
+            stratify=y_train_temp
+        )
         if self.continuous_col_names:
             for col in self.continuous_col_names:
                 self.standard_scalers[col] = StandardScaler().fit(self.X_train[[col]])
@@ -148,40 +152,19 @@ class dataset_object:
     def label_encode_features(self, X, categorical_cols, categorical_col_names) -> pd.DataFrame:
         X_copy = X.copy()
         for col in categorical_cols:
-            if isinstance(X_copy, pd.DataFrame):  # If X is a DataFrame, use column names
+            if isinstance(X_copy, pd.DataFrame):  # if X dataframe, use column names
                 X_copy.iloc[:, col] = self.label_encoders[col].transform(X_copy.iloc[:, col])
-            else:  # If X is a NumPy array, use array indexing
+            else:  # if X is numpy array, use array indexing
                 X_copy[:, col] = self.label_encoders[col].transform(X_copy[:, col])
         return X_copy
-
-    # def label_encode_features(self, X, categorical_cols, categorical_col_names) -> pd.DataFrame:
-    #     X_copy = X.copy()
-    #     if isinstance(X_copy, pd.DataFrame):
-    #         for col in categorical_col_names:
-    #             X_copy[col] = self.label_encoders[col].transform(X_copy[col])
-    #     else:  # assume NumPy array
-    #         for i, col in zip(categorical_cols, categorical_col_names):
-    #             X_copy[:, i] = self.label_encoders[col].transform(X_copy[:, i])
-    #     return X_copy
 
     def label_decode_features(self, X, categorical_cols, categorical_col_names) -> pd.DataFrame:
         X_copy = X.copy()
         for col in categorical_cols:
-            if isinstance(X_copy, pd.DataFrame):  # If X is a DataFrame, use column names
+            if isinstance(X_copy, pd.DataFrame):  # if X dataframe, use column names
                 X_copy.iloc[:, col] = self.label_encoders[col].inverse_transform(X_copy.iloc[:, col].astype(int))
-            else:  # If X is a NumPy array, use array indexing
+            else:  # if X numpy array, use array indexing
                 temp = self.label_encoders[col].inverse_transform(X_copy[:, col].astype(int))
                 X_copy = X_copy.astype(type(temp))
                 X_copy[:, col] = temp
         return X_copy
-
-    # def label_decode_features(self, X, categorical_cols, categorical_col_names) -> pd.DataFrame:
-    #     X_copy = X.copy()
-    #     if isinstance(X_copy, pd.DataFrame):
-    #         for col in categorical_col_names:
-    #             X_copy[col] = self.label_encoders[col].inverse_transform(X_copy[col].astype(int))
-    #     else:  # assume NumPy array
-    #         for i, col in zip(categorical_cols, categorical_col_names):
-    #             decoded = self.label_encoders[col].inverse_transform(X_copy[:, i].astype(int))
-    #             X_copy[:, i] = decoded
-    #     return X_copy

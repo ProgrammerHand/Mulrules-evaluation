@@ -13,7 +13,8 @@ class rule_wrapper:
         raw,
         rejected_count: int,
         at_limit: bool,
-        elapsed_time
+        elapsed_time,
+        instance_name
     ):
         self.premises: List[Dict[str, Union[str, float]]] = premises
         self.consequence: Dict[str, Union[str, float]] = consequence
@@ -22,9 +23,10 @@ class rule_wrapper:
         self.rejected_count: int = rejected_count
         self.at_limit: bool = at_limit
         self.elapsed_time = elapsed_time
+        self.instance_name = instance_name
 
     @classmethod
-    def from_rule(cls, rule, outcome, explainer, rejected_count, elapsed_time, at_limit=False, numeric_cols=None):
+    def from_rule(cls, instance_name, rule, outcome, explainer, rejected_count, elapsed_time, at_limit=False, numeric_cols=None):
         if explainer == 'ANCHOR':
             premises = []
             for p in rule:
@@ -69,7 +71,7 @@ class rule_wrapper:
         else:
             raise ValueError(f"Unknown explainer: {explainer}")
 
-        return cls(explainer, premises, consequence, rule, rejected_count, at_limit, elapsed_time)
+        return cls(explainer, premises, consequence, rule, rejected_count, at_limit, elapsed_time, instance_name)
 
     @staticmethod
     def anchor_parser(rule: str) -> Dict[str, Union[str, str | float]]:
@@ -93,7 +95,7 @@ class rule_wrapper:
     @staticmethod
     def lore_parser(attr: str, cond_str: str, numeric_cols: Optional[List[str]] = None) -> Dict[str, Union[str, float]]:
         """
-        Parse a single predicate from attribute and condition string into {'attr', 'op', 'val'} format.
+        parse a single predicate from attribute and condition string into {'attr', 'op', 'val'} format.
         """
 
         if numeric_cols is not None and attr in numeric_cols:
@@ -151,7 +153,7 @@ class rule_wrapper:
     @staticmethod
     def split_compound_condition(attr: str, cond: str) -> List[Tuple[str, str]]:
         """
-        Detect and split a compound condition like '1848.0< capital.loss <=2005.0'
+        detect and split a compound condition like '1848.0< capital.loss <=2005.0'
         into two simple conditions: 'capital.loss > 1848.0' and 'capital.loss <= 2005.0'
         """
         pattern = re.compile(
@@ -226,7 +228,6 @@ class rule_wrapper:
         except Exception:
             pass
         return op_func(attr_series, cond['val'])
-        # return op_func(cond_type(df[cond['attr']]), cond['val'])
 
     def evaluate_on(self, df: pd.DataFrame) -> Dict[str, float]:
         # premises mask
@@ -243,18 +244,11 @@ class rule_wrapper:
         outcome_df = df[self._apply_condition(df, self.consequence)]
         local_cov_val = len(covered_and_outcome) / len(outcome_df)
 
-        temp_local_cov_val = len(covered) / len(outcome_df)
-
         # precision
         precision = 0
         if len(covered) > 0:
             outcome_mask = self._apply_condition(covered, self.consequence)
             precision = outcome_mask.mean()
-
-        # if not self.at_limit:
-        #     result = f"Cov,Cov_class,Cov_temp {round(coverage, 5)}; {round(local_cov_val, 5)}; {round(temp_local_cov_val, 5)}, Pre, Len, Reject, Elapsed_time {round(precision, 5)}; {len(self.premises)}; {self.rejected_count}; {self.elapsed_time}"
-        # else:
-        #     result = f"Cov,Cov_class,Cov_temp {round(coverage, 5)}; {round(local_cov_val, 5)}; {round(temp_local_cov_val, 5)}, Pre, Len, Reject, Elapsed_time {round(precision, 5)};{len(self.premises)};{self.rejected_count}; {self.elapsed_time}; AT LIMIT"
 
         result = {
         "coverage": round(coverage, 5),

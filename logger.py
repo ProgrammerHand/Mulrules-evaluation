@@ -7,7 +7,7 @@ def setup_logger(log_file, name):
     logger = logging.getLogger(name)  # create a named logger for each dataset
     logger.setLevel(logging.INFO)
 
-    # clear existing handlers to prevent duplicate logs
+    # clearing existing handlers to prevent duplicate logs
     if logger.hasHandlers():
         logger.handlers.clear()
 
@@ -17,9 +17,6 @@ def setup_logger(log_file, name):
 
     # create file handler
     file_handler = logging.FileHandler(timestamped_log_file, mode='w')  # 'w' to overwrite, 'a' to append
-    # formatter = logging.Formatter('%(asctime)s %(name)s %(levelname)s %(custom_tag)s: %(message)s',
-    #                               datefmt='%Y-%m-%d %H:%M:%S')
-    # formatter = logging.Formatter('%(levelname)s %(custom_tag)s: %(message)s')
     formatter = logging.Formatter('%(message)s')
     file_handler.setFormatter(formatter)
 

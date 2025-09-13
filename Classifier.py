@@ -1,6 +1,10 @@
-import deap
+import os, torch, deap
+from datetime import datetime
 from xailib.models.bbox import AbstractBBox
+from joblib import dump, load
+from pathlib import Path
 import numpy as np
+
 
 class sklearn_classifier_wrapper_custom(AbstractBBox):
     def __init__(self, classifier, custom_scaler=None, transformer=None):
@@ -21,16 +25,11 @@ class sklearn_classifier_wrapper_custom(AbstractBBox):
             data = np.array([[float(x) for x in row] for row in X], dtype=object)
         else:
             data = X.copy()
-            # np.array([[float(x) for x in X.copy()]], dtype=object)
         data = self.custom_scaler.transform(data) if hasattr(self, 'custom_scaler') else data
         data = self.transformer.transform(data) if hasattr(self, 'transformer') else data
         return self.bbox.predict(data)
 
     def predict_proba(self, X):
-        # print(type(X))
-        # print(type(X[0][0]))
-        # print(X.dtype)
-        # if isinstance(X, deap.creator.individual):
         if type(X) != np.array:
             data = np.array([[float(x) for x in np.ravel(X.copy())]], dtype=object)
         elif X.shape[0] > 1:
@@ -41,15 +40,30 @@ class sklearn_classifier_wrapper_custom(AbstractBBox):
         data = self.transformer.transform(data) if hasattr(self, 'transformer') else data
         return self.bbox.predict_proba(data)
 
-def create_classifier(experiment_name, classifier_name, classifiers_names, classifier_parametrs):
+def create_classifier(experiment_name, classifier_name, classifiers_names, classifier_parametrs, device):
     if classifier_name in classifiers_names and classifier_name in classifier_parametrs:
-        # Instantiate the classifier using the lambda function
         classifier = classifiers_names[classifier_name]()
+        params = classifier_parametrs[classifier_name][experiment_name]
         if classifier_name == "simpleNN":
-            return classifier(**classifier_parametrs[classifier_name][experiment_name])
-        # Set parameters using the classifier's parameters from classifier_parametrs
-        classifier.set_params(**classifier_parametrs[classifier_name][experiment_name])
-        return classifier
+            model = classifier(**params).to(device)
+
+            model_path = Path(f"models/{experiment_name}_{classifier_name}_{datetime.now().strftime('%m-%Y')}.pt")
+            if model_path.is_file():
+                ckpt = torch.load(model_path, map_location=device, weights_only=False)
+                state = ckpt.get("state_dict", ckpt)
+                model.load_state_dict(state, strict=True)
+                if "decision_threshold" in ckpt:
+                    model.decision_threshold = float(ckpt["decision_threshold"])
+                model.eval()
+                return model, True
+            return model, False
+
+        classifier.set_params(**params)
+        model_path = Path(f"models/{experiment_name}_{classifier_name}_{datetime.now().strftime('%m-%Y')}.joblib")
+        if model_path.is_file():
+            classifier = load(model_path)
+            return classifier, True
+        return classifier, False
     else:
         raise ValueError(f"Classifier '{classifier_name}' not found or missing parameters.")
 
@@ -119,13 +133,30 @@ def get_balanced_correct_indexes(pred_funct, X_test, y_test, n, instance_2e):
 
         if len(cls_correct_indices) < n_per_class:
             print(f"Not enough correct samples for class {cls}. Requested {n_per_class}, but only {len(cls_correct_indices)} available.")
-            # sampled = np.random.choice(cls_indices, size=len(cls_indices), replace=False)
             sampled = np.random.choice(cls_correct_indices, size=len(cls_correct_indices), replace=False)
         else:
             sampled = np.random.choice(cls_correct_indices, size=n_per_class, replace=False)
-            # sampled = np.random.choice(cls_indices, size=n_per_class, replace=False)
 
         # map back to original X_test index
         selected_indices.extend(sampled.tolist())
 
     return positional_indexes_instance_2e + selected_indices
+
+def save_model(model, experiment_name, classifier_name, decision_threshold = None):
+    if classifier_name == "simpleNN":
+        extension = ".pt"
+    else:
+        extension = ".joblib"
+    os.makedirs("models", exist_ok=True)
+    model_path = f"models/{experiment_name}_{classifier_name}_{datetime.now().strftime('%m-%Y')}"+extension
+    if classifier_name == "simpleNN":
+        torch.save(
+            {
+                "state_dict": model.state_dict(),
+                "decision_threshold": float(getattr(model, "decision_threshold", decision_threshold)),
+            },
+            model_path,
+        )
+    else:
+        dump(model, model_path)
+    return model_path
